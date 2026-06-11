@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Streamlit — keep config.toml (theme), ignore secrets only
+.streamlit/secrets.toml
+
+# Temporary analysis files
+data/tmp/
+
+# OS
+.DS_Store
+Thumbs.db

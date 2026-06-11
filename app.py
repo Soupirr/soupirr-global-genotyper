@@ -770,8 +770,10 @@ with tab_tree:
             if header not in st.session_state["trees"]:
                 with st.spinner(f"Building tree for {header[:40]}..."):
                     neighbours = find_closest_neighbours(sequence, references, n=20)
-                    tmp_fasta = os.path.join(DATA_FOLDER, "tmp_input.fasta")
-                    tmp_aligned = os.path.join(DATA_FOLDER, "tmp_aligned.fasta")
+                    tmp_dir = os.path.join(DATA_FOLDER, "tmp")
+                    os.makedirs(tmp_dir, exist_ok=True)
+                    tmp_fasta = os.path.join(tmp_dir, "tmp_input.fasta")
+                    tmp_aligned = os.path.join(tmp_dir, "tmp_aligned.fasta")
                     write_temp_fasta(header, sequence, neighbours, tmp_fasta)
                     align_sequences_mafft(tmp_fasta, tmp_aligned)
                     st.session_state["trees"][header] = build_tree_fasttree(tmp_aligned)
@@ -781,97 +783,97 @@ with tab_tree:
 
         for i, (header, sequence) in enumerate(all_sequences.items()):
             with tree_tabs[i]:
-                    tree = st.session_state["trees"][header]
+                tree = st.session_state["trees"][header]
 
-                    # Step 5 - display
-                    x_lines, y_lines, x_nodes, y_nodes, labels, n_leaves, max_x = (
-                        tree_to_plotly(tree)
+                # Step 5 - display
+                x_lines, y_lines, x_nodes, y_nodes, labels, n_leaves, max_x = (
+                    tree_to_plotly(tree)
+                )
+
+                node_colors = []
+                for label in labels:
+                    if label.startswith("QUERY_"):
+                        node_colors.append("#00FF00")  # red for query
+                    else:
+                        node_colors.append(get_color(label))
+
+                fig = go.Figure()
+                # Les paramètres des lignes
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_lines,
+                        y=y_lines,
+                        mode="lines",
+                        line=dict(color="rgba(150,150,150,0.3)", width=1.5),
+                        hoverinfo="none",
                     )
-
-                    node_colors = []
-                    for label in labels:
-                        if label.startswith("QUERY_"):
-                            node_colors.append("#00FF00")  # red for query
-                        else:
-                            node_colors.append(get_color(label))
-
-                    fig = go.Figure()
-                    # Les paramètres des lignes
-                    fig.add_trace(
-                        go.Scatter(
-                            x=x_lines,
-                            y=y_lines,
-                            mode="lines",
-                            line=dict(color="rgba(150,150,150,0.3)", width=1.5),
-                            hoverinfo="none",
+                )
+                # les paramètres du texte
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_nodes,
+                        y=y_nodes,
+                        mode="markers+text",
+                        marker=dict(size=6, color=node_colors),
+                        text=labels,
+                        textposition="middle right",
+                        textfont=dict(
+                            size=12,
+                            color=[
+                                "#2ECC71" if lab.startswith("QUERY_") else "white"
+                                for lab in labels
+                            ],
+                        ),
+                        hoverinfo="text",
+                    )
+                )
+                # les paramètres du graph
+                fig.update_layout(
+                    title=dict(
+                        text=f"{header}",
+                        font=dict(size=24, color="white"),
+                        x=0,
+                        xanchor="left",
+                    ),
+                    showlegend=False,
+                    height=max(400, n_leaves * 25),
+                    width=1800,
+                    margin=dict(l=0, r=0, t=40, b=0),
+                    xaxis=dict(
+                        showgrid=False,
+                        zeroline=False,
+                        showticklabels=False,
+                        fixedrange=False,
+                    ),
+                    yaxis=dict(
+                        showgrid=False,
+                        zeroline=False,
+                        showticklabels=False,
+                        fixedrange=False,
+                    ),
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    shapes=[
+                        dict(
+                            type="rect",
+                            xref="paper",
+                            yref="paper",
+                            x0=0,
+                            y0=0,
+                            x1=1,
+                            y1=1,
+                            line=dict(
+                                color="rgba(255,255,255,0.3)", width=1
+                            ),  # subtle white border
                         )
-                    )
-                    # les paramètres du texte
-                    fig.add_trace(
-                        go.Scatter(
-                            x=x_nodes,
-                            y=y_nodes,
-                            mode="markers+text",
-                            marker=dict(size=6, color=node_colors),
-                            text=labels,
-                            textposition="middle right",
-                            textfont=dict(
-                                size=12,
-                                color=[
-                                    "#2ECC71" if lab.startswith("QUERY_") else "white"
-                                    for lab in labels
-                                ],
-                            ),
-                            hoverinfo="text",
-                        )
-                    )
-                    # les paramètres du graph
-                    fig.update_layout(
-                        title=dict(
-                            text=f"{header}",
-                            font=dict(size=24, color="white"),
-                            x=0,
-                            xanchor="left",
-                        ),
-                        showlegend=False,
-                        height=max(400, n_leaves * 25),
-                        width=1800,
-                        margin=dict(l=0, r=0, t=40, b=0),
-                        xaxis=dict(
-                            showgrid=False,
-                            zeroline=False,
-                            showticklabels=False,
-                            fixedrange=False,
-                        ),
-                        yaxis=dict(
-                            showgrid=False,
-                            zeroline=False,
-                            showticklabels=False,
-                            fixedrange=False,
-                        ),
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        shapes=[
-                            dict(
-                                type="rect",
-                                xref="paper",
-                                yref="paper",
-                                x0=0,
-                                y0=0,
-                                x1=1,
-                                y1=1,
-                                line=dict(
-                                    color="rgba(255,255,255,0.3)", width=1
-                                ),  # subtle white border
-                            )
-                        ],
-                        dragmode="pan",
-                    )
-                    st.plotly_chart(
-                        fig,
-                        width="stretch",
-                        config={"scrollZoom": True, "displayModeBar": True},
-                    )
+                    ],
+                    dragmode="pan",
+                )
+                st.plotly_chart(
+                    fig,
+                    width="stretch",
+                    config={"scrollZoom": True, "displayModeBar": True},
+                )
 
 
 # ============================================================================
@@ -904,37 +906,227 @@ with help_tab:
 
         # Maps first word (lowercased) of host field to a clean display name
         HOST_NORMALIZE = {
+            # ── Chicken ──────────────────────────────────────────────────────────
             "chicken": "Chicken",
-            "pigeon": "Pigeon",
-            "duck": "Duck",
-            "goose": "Goose",
-            "mallard": "Mallard",
-            "cormorant": "Cormorant",
-            "turkey": "Turkey",
-            "dove": "Dove",
-            "quail": "Quail",
-            "peacock": "Peacock",
-            "parrot": "Parrot",
-            "pheasant": "Pheasant",
-            "ostrich": "Ostrich",
-            "parakeet": "Parakeet",
-            "guinea": "Guinea fowl",
-            "teal": "Teal",
-            "rock": "Rock Pigeon",
-            "wild": "Wild Bird",
-            "baikal": "Teal",
-            "eurasian": "Wild Bird",
-            "northern": "Wild Bird",
-            "turtle": "Dove",
-            "blue": "Wild Bird",
-            "anseriformes": "Wild Bird",
-            "mandarin": "Duck",
-            "heron": "Wild Bird",
+            "ck": "Chicken",
             "gamefowl": "Chicken",
+            "gamecock": "Chicken",
             "backyard": "Chicken",
             "layer": "Chicken",
-            "domestic": "Other",
-            "fowl": "Other",
+            "broiler": "Chicken",
+            "laying": "Chicken",
+            "fighting": "Chicken",
+            "fightcock": "Chicken",
+            "game": "Chicken",
+            "asil": "Chicken",
+            "poultry": "Chicken",
+            # ── Pigeon ───────────────────────────────────────────────────────────
+            "pigeon": "Pigeon",
+            "rock": "Rock Pigeon",
+            "carrier": "Pigeon",
+            "dpigeon": "Pigeon",
+            # ── Duck ─────────────────────────────────────────────────────────────
+            "duck": "Duck",
+            "mallard": "Mallard",
+            "mandarin": "Duck",
+            "muscovy": "Duck",
+            "feralduck": "Duck",
+            "meller'sduck": "Duck",
+            "tree-duck": "Duck",
+            "gadwall": "Wild Bird",
+            "shoveler": "Wild Bird",
+            "garganey": "Wild Bird",
+            "tadorna": "Wild Bird",
+            "anas": "Wild Bird",
+            "mottled": "Wild Bird",
+            "redhead": "Wild Bird",
+            "ruddy": "Wild Bird",
+            # ── Goose ────────────────────────────────────────────────────────────
+            "goose": "Goose",
+            "anser": "Wild Bird",
+            "anseriformes": "Wild Bird",
+            "whitefronted": "Wild Bird",
+            "wingedgoose": "Wild Bird",
+            "bean": "Wild Bird",
+            "fabalis": "Wild Bird",
+            "sheldrake": "Wild Bird",
+            # ── Teal ─────────────────────────────────────────────────────────────
+            "teal": "Teal",
+            "baikal": "Teal",
+            # ── Wild Bird (misc) ─────────────────────────────────────────────────
+            "wild": "Wild Bird",
+            "eurasian": "Wild Bird",
+            "northern": "Wild Bird",
+            "pintail": "Wild Bird",
+            "blue": "Wild Bird",
+            "heron": "Wild Bird",
+            "cormorant": "Cormorant",
+            "swan": "Wild Bird",
+            "gull": "Wild Bird",
+            "eagle": "Wild Bird",
+            "turnstone": "Wild Bird",
+            "ruddyturnstone": "Wild Bird",
+            "redknot": "Wild Bird",
+            "knot": "Wild Bird",
+            "coot": "Wild Bird",
+            "pelican": "Wild Bird",
+            "dalmatian": "Wild Bird",
+            "egret": "Wild Bird",
+            "sterna": "Wild Bird",
+            "emu": "Wild Bird",
+            "vulture": "Wild Bird",
+            "sandpiper": "Wild Bird",
+            "sparrowhawk": "Wild Bird",
+            "finch": "Wild Bird",
+            "waterfowl": "Wild Bird",
+            "wildfowl": "Wild Bird",
+            "raptor": "Wild Bird",
+            "penguin": "Wild Bird",
+            "chukar": "Wild Bird",
+            "gannet": "Wild Bird",
+            "roller": "Wild Bird",
+            "charadriiformes": "Wild Bird",
+            "chachalaca": "Wild Bird",
+            "psittacine": "Parrot",
+            "crested": "Wild Bird",
+            "collared": "Wild Bird",
+            "spoonbill": "Wild Bird",
+            "african": "Wild Bird",
+            "oriental": "Wild Bird",
+            "european": "Wild Bird",
+            "black": "Wild Bird",
+            "white": "Wild Bird",
+            "green": "Wild Bird",
+            "red": "Wild Bird",
+            "common": "Wild Bird",
+            "great": "Wild Bird",
+            "american": "Wild Bird",
+            "amer": "Wild Bird",
+            "rough": "Wild Bird",
+            "lesser": "Wild Bird",
+            "long": "Wild Bird",
+            "slaty": "Wild Bird",
+            "hooded": "Wild Bird",
+            "winged": "Wild Bird",
+            "backed": "Wild Bird",
+            "billed": "Wild Bird",
+            "birds": "Wild Bird",
+            "bird": "Wild Bird",
+            "alba": "Wild Bird",
+            "seafowl": "Wild Bird",
+            "spur": "Wild Bird",
+            "spot": "Wild Bird",
+            "ring": "Wild Bird",
+            "laughing": "Wild Bird",
+            "whitebreasted": "Wild Bird",
+            "redlored": "Wild Bird",
+            "redpoll": "Wild Bird",
+            "herring": "Wild Bird",
+            "scarlet": "Wild Bird",
+            "crestless": "Wild Bird",
+            "spectacled": "Wild Bird",
+            "dominican": "Wild Bird",
+            "japanese": "Quail",
+            # ── Parrot ───────────────────────────────────────────────────────────
+            "parrot": "Parrot",
+            "parakeet": "Parakeet",
+            "amazon": "Parrot",
+            "rosella": "Parrot",
+            "cockatiel": "Parrot",
+            # ── Other named species ───────────────────────────────────────────────
+            "turkey": "Turkey",
+            "dove": "Dove",
+            "turtle": "Dove",
+            "quail": "Quail",
+            "peacock": "Peacock",
+            "pheasant": "Pheasant",
+            "ostrich": "Wild Bird",
+            "guinea": "Guinea fowl",
+            "coucal": "Wild Bird",
+            # ── Unspecified (too vague or not a species) ─────────────────────────
+            "domestic": "Unspecified",
+            "fowl": "Unspecified",
+            "local": "Unspecified",
+            "village": "Unspecified",
+            "avian": "Unspecified",
+            "environment": "Unspecified",
+            "lbm": "Unspecified",
+            "ecdo": "Unspecified",
+            "rodo": "Unspecified",
+            "bassette": "Unspecified",
+            "longearde": "Unspecified",
+            "highland": "Unspecified",
+            "mule": "Unspecified",
+            "camel": "Unspecified",
+            "cattle": "Unspecified",
+            "south": "Unspecified",
+            "chinese": "Unspecified",
+            "s": "Unspecified",
+        }
+
+        # Set of known country names (lowercased) to detect when host field is missing
+        KNOWN_COUNTRIES = set(df_world["country"].str.lower()) | {
+            "china",
+            "usa",
+            "russia",
+        }
+
+        # US state abbreviations that may appear in host field when it's missing
+        US_STATE_ABBREVS = {
+            "mn",
+            "md",
+            "nj",
+            "oh",
+            "pa",
+            "fl",
+            "ct",
+            "wi",
+            "id",
+            "ak",
+            "pi",
+            "ny",
+            "ca",
+            "tx",
+            "wa",
+            "or",
+            "co",
+            "az",
+            "ga",
+            "va",
+            "nc",
+            "sc",
+            "al",
+            "ms",
+            "la",
+            "ar",
+            "mo",
+            "tn",
+            "ky",
+            "wv",
+            "in",
+            "il",
+            "mi",
+            "ia",
+            "ne",
+            "ks",
+            "ok",
+            "nm",
+            "ut",
+            "nv",
+            "wy",
+            "mt",
+            "nd",
+            "sd",
+            "hi",
+            "de",
+            "md",
+            "nh",
+            "vt",
+            "me",
+            "ri",
+            "nj",
+            "ct",
+            "ma",
         }
 
         for header in db_references.keys():
@@ -956,7 +1148,18 @@ with help_tab:
                 host_idx = 6  # shift past the spurious '1'
             if len(parts) > host_idx:
                 raw_host = parts[host_idx].lower()
-                host = HOST_NORMALIZE.get(raw_host, "Other")
+                if (
+                    not raw_host
+                    or raw_host in KNOWN_COUNTRIES
+                    or raw_host in US_STATE_ABBREVS
+                    or raw_host.startswith("apmv")
+                    or raw_host.startswith("ndv")
+                    or raw_host.startswith("aoav")
+                ):
+                    # Empty, country, state abbrev, or virus label — host is missing
+                    host = "Unspecified"
+                else:
+                    host = HOST_NORMALIZE.get(raw_host, "Other")
                 host_counts[host] = host_counts.get(host, 0) + 1
 
             # Filtrage des Pays
@@ -1086,17 +1289,47 @@ with help_tab:
 
         with col_host:
             st.subheader("Host Distribution")
-            df_hosts = pd.DataFrame(
-                sorted(host_counts.items(), key=lambda x: x[1], reverse=True),
-                columns=["Host", "Sequences"],
-            )
-            host_colors = [[0, "#0099cc"], [1, "#00c9a7"]]
+            # Sort: Unspecified first (greyed out), then by count descending
+            host_items = sorted(host_counts.items(), key=lambda x: x[1], reverse=True)
+            host_items = [(k, v) for k, v in host_items if k == "Unspecified"] + [
+                (k, v) for k, v in host_items if k != "Unspecified"
+            ]
+            df_hosts = pd.DataFrame(host_items, columns=["Host", "Sequences"])
+
+            PALETTE = [
+                "#0099cc",
+                "#00c9a7",
+                "#f0a500",
+                "#e05c5c",
+                "#7b68ee",
+                "#20b2aa",
+                "#ff7f50",
+                "#9acd32",
+                "#ba55d3",
+                "#4682b4",
+                "#cd853f",
+                "#5f9ea0",
+                "#d2691e",
+                "#6495ed",
+                "#dc143c",
+            ]
+            pie_colors = []
+            palette_i = 0
+            for host in df_hosts["Host"]:
+                if host == "Unspecified":
+                    pie_colors.append("#888888")
+                elif host == "Other":
+                    pie_colors.append("#555555")
+                else:
+                    pie_colors.append(PALETTE[palette_i % len(PALETTE)])
+                    palette_i += 1
+
             fig_host = go.Figure(
                 go.Pie(
                     labels=df_hosts["Host"],
                     values=df_hosts["Sequences"],
                     hole=0.4,
-                    marker=dict(colors=host_colors[: len(df_hosts)]),
+                    marker=dict(colors=pie_colors),
                     textinfo="label+percent",
                     textposition="inside",
                     textfont=dict(color="white"),
