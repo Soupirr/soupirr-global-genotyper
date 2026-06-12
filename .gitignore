@@ -15,3 +15,8 @@ data/tmp/
 # OS
 .DS_Store
 Thumbs.db
+
+# Deployement
+dist/
+build/
+*.spec.bak
