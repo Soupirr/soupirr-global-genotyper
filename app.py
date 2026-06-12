@@ -85,21 +85,19 @@ st.markdown(
 
 
 # ============================================================================
-# MAIN TABS / SIDEBAR CONFIG
+# MAIN TABS
 # ============================================================================
 
 # def des onglets
-tab_analyze, tab_map, tab_tree, help_tab = st.tabs(
+tab_analyze, tab_tree, tab_map, help_tab = st.tabs(
     [
         "Analyze Sequences",
-        "Global Distribution Map",
         "Phylogenetic Trees",
+        "Global Distribution Map",
         "Help - Statistics",
     ]
 )
 
-if st.sidebar.button("Reset", width="stretch"):
-    st.rerun()
 
 # ============================================================================
 # TAB 1: ANALYZE SEQUENCE
@@ -108,13 +106,13 @@ if st.sidebar.button("Reset", width="stretch"):
 with tab_analyze:
     st.header("Sequence Analyzer Tool")
 
-    # Load BOTH reference datasets / dict reset
+    # Charge les datasets de référence / reset les dictionnaires
     @st.cache_resource
     def load_all_references():
         combined_sequences = {}
         errors = []
 
-        # Automatically loads every .fas file in the sequences folder
+        # Charge automatiquement tous les fichiers .fas du dossier "sequences"
         fas_files = [f for f in os.listdir(SEQ_FOLDER) if f.endswith(".fas")]
 
         for filename in fas_files:
@@ -159,14 +157,18 @@ with tab_analyze:
         st.metric(
             "Databases Loaded",
             files_count,
-            help="files can be found in '.../data/sequences/'",
+            help="files can be found in '.../data/sequences/*'",
         )
     with col2:
-        st.metric("Total Sequences", len(references))
+        st.metric(
+            "Total Sequences",
+            len(references),
+            help="unique genotypes names can be found in '.../data/genotypes.txt'",
+        )
 
     st.divider()
 
-    # Create layout: Configuration sur la gauche, Input/Results sur la droite
+    # layout: Configuration sur la gauche, Input/Results sur la droite
     col_config, col_content = st.columns([0.2, 0.8])
 
     with col_config:
@@ -187,6 +189,7 @@ with tab_analyze:
                 "Use **Hamming** for faster results."
             )
 
+        # Scroll pour choisir le nombre de Matches à afficher
         top_n_matches = st.slider(
             "Number of Top Matches",
             min_value=1,
@@ -228,12 +231,13 @@ with tab_analyze:
                     "utf-8"
                 )  # transforme le fichier uploadé (bytes) en texte
 
-        # Analysis section
+        # bouton d'analyse
         col_btn1, col_btn2 = st.columns([0.7, 0.3])
         with col_btn1:
             analyze_button = st.button(
                 "Analyze Sequences", type="primary", width="stretch"
             )
+        # bouton de reset
         with col_btn2:
             st.button(
                 "Clear Input",
@@ -270,8 +274,9 @@ with tab_analyze:
                         similarity_method=method,
                     )
                     all_results.append(result)
-                progress_bar.progress(1.0, text="Analysis complete!")
+                progress_bar.progress(1, text="Analysis complete!")
 
+                # sauvegarde des informations de l'analyse
                 st.session_state["all_results"] = all_results
                 st.session_state["all_sequences"] = all_sequences
                 st.session_state["elapsed_time"] = time.time() - start_time
@@ -285,7 +290,7 @@ with tab_analyze:
             st.success(f"Analysis of {len(all_results)} sequence(s) completed!")
             st.info(f"Analysis took **{elapsed_time:.2f} seconds**")
 
-            # Display results in tabs
+            # Display des résultats
             seq_tabs = st.tabs([r["input_header"][:30] for r in all_results])
 
             for i, (tab, results) in enumerate(zip(seq_tabs, all_results)):
@@ -293,14 +298,15 @@ with tab_analyze:
                     st.subheader("Sequence Information")
                     col1, col2 = st.columns([0.8, 0.2])  # 1er colonne (80%)
                     with col1:
-                        st.write(f"**Header:** {results['input_header']}")
+                        st.write(f"**Header:** {results['input_header']}")  # header
                     with col2:
-                        st.write(f"**Length:** {results['sequence_length']} bp")
+                        st.write(f"**Length:** {results['sequence_length']} bp")  # bp
 
                     st.divider()
 
                     st.subheader("Genotype Identification")
                     matches = results["genotype_matches"]
+                    # import les matches de results
 
                     if matches:
                         top_match_raw = matches[0]
@@ -321,6 +327,7 @@ with tab_analyze:
                                 top_match["sample_count"],
                             )
                         with col3:
+                            # affiche le header du top match
                             st.metric(
                                 "Average Match Score",
                                 f"{top_match['avg_similarity']}%",
@@ -350,8 +357,10 @@ with tab_analyze:
 
                         st.divider()
 
+                        # Tableau avec les Top Matches
                         st.write("**Top Matching Genotypes:**")
-                        matches_df = pd.DataFrame(  # Transformation en DataFrame
+                        # Transformation en DataFrame
+                        matches_df = pd.DataFrame(
                             matches,
                             columns=[
                                 "Genotype",
@@ -379,8 +388,10 @@ with tab_analyze:
                         )
 
                     st.divider()
+
                     st.subheader("Pathogenicity Analysis")
 
+                    # import les résultats de l'analyse
                     cleavage = results["cleavage_analysis"]
 
                     if cleavage["cleavage_region_found"]:
@@ -410,13 +421,13 @@ with tab_analyze:
                                     unsafe_allow_html=True,
                                 )
                             else:
-                                # No motif found - show whole sequence in yellow
+                                # si pas de motifs trouvés
                                 st.markdown(
                                     f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein}</div>",
                                     unsafe_allow_html=True,
                                 )
                         with col2:
-                            st.write("**Motif Found (protein):**")
+                            st.write("**Motif Found:**")
                             if (
                                 cleavage["motif_type"]
                                 and len(cleavage["motif_type"]) == 6
@@ -434,6 +445,7 @@ with tab_analyze:
                         pathogenicity = cleavage["pathogenicity"]
                         confidence = cleavage["confidence"]
 
+                        # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
                         if "Likely Virulent" in pathogenicity:
                             st.error(f"Likely Virulent (Confidence: {confidence})")
                             st.write(
@@ -457,7 +469,7 @@ with tab_analyze:
                             "Could not analyze cleavage site. Sequence may be incomplete."
                         )
 
-            # Export all results combined
+            # Exportation des résultats dans un fichier .csv
             st.divider()
             st.subheader("Export Results")
 
@@ -497,205 +509,19 @@ with tab_analyze:
 
 
 # ============================================================================
-# TAB 2: GLOBAL DISTRIBUTION MAP
-# ============================================================================
-
-with tab_map:
-    st.header("Global Distribution Map")
-    st.markdown("Explore the geographic distribution of NDV genotypes worldwide.")
-
-    # LE PARSER
-
-    @st.cache_resource
-    def load_locations_database():
-        df_china = pd.read_csv(os.path.join(LOCATION_FOLDER, "china_provinces.csv"))
-        df_us = pd.read_csv(os.path.join(LOCATION_FOLDER, "US_capitals.csv"))
-        df_world = pd.read_csv(os.path.join(LOCATION_FOLDER, "countries.csv"))
-        df_russia = pd.read_csv(os.path.join(LOCATION_FOLDER, "russia_regions.csv"))
-        return df_china, df_us, df_world, df_russia
-
-    df_china, df_us, df_world, df_russia = load_locations_database()
-
-    # Centroïdes fallback
-    CENTROIDS = {
-        "USA": (37.09, -95.71),
-        "China": (35.86, 104.19),
-        "Russia": (61.52, 105.31),
-    }
-
-    def parse_header_location(header):
-        """
-        Retourne (lat, lon, label) depuis un header FASTA NDV.
-        """
-        parts = header.split("_")
-        padded = "_" + "_".join(parts) + "_"  # pour chercher _XX_ proprement
-
-        # ── 1. Détection du pays ──────────────────────────────────────────────────
-        country = None
-        if "_USA_" in padded:
-            country = "USA"
-        elif "_China_" in padded:
-            country = "China"
-        elif "_Russia_" in padded:
-            country = "Russia"
-        else:
-            # Cherche dans la colonne country du CSV monde
-            for _, row in df_world.iterrows():
-                if f"_{row['country']}_" in padded:
-                    return row["lat"], row["lon"], row["country"]
-            return None, None, "Unknown"
-
-        # ── 2. Détection de la région ─────────────────────────────────────────────
-        if country == "USA":
-            # Priorité 1 : abréviation (_PA_, _NY_...)
-            for _, row in df_us.iterrows():
-                if f"_{row['abbreviation_us']}_" in padded:
-                    return row["lat"], row["lon"], f"{row['state']}, USA"
-            # Priorité 2 : nom complet (_Texas_, _New_York_...)
-            for _, row in df_us.iterrows():
-                state_fmt = row["state"]  # déjà avec _ dans le CSV ex: New_York
-                if f"_{state_fmt}_" in padded:
-                    return row["lat"], row["lon"], f"{row['state']}, USA"
-            # Fallback
-            return CENTROIDS["USA"][0], CENTROIDS["USA"][1], "USA"
-
-        if country == "China":
-            # Priorité 1 : abréviation (_AH_, _BJ_...)
-            for _, row in df_china.iterrows():
-                if f"_{row['abbreviation_cn']}_" in padded:
-                    return row["lat"], row["lon"], f"{row['province']}, China"
-            # Priorité 2 : nom complet (_Anhui_, _Shanghai_...)
-            for _, row in df_china.iterrows():
-                if f"_{row['province']}_" in padded:
-                    return row["lat"], row["lon"], f"{row['province']}, China"
-            # Fallback
-            return CENTROIDS["China"][0], CENTROIDS["China"][1], "China"
-
-        if country == "Russia":
-            # Nom de région (_Novosibirsk_, _FarEast_, _Amur_region_...)
-            for _, row in df_russia.iterrows():
-                if f"_{row['region_ru']}_" in padded:
-                    return row["lat"], row["lon"], f"{row['region_ru']}, Russia"
-            # Fallback
-            return CENTROIDS["Russia"][0], CENTROIDS["Russia"][1], "Russia"
-
-    SEQUENCES_FOLDER = os.path.join(DATA_FOLDER, "sequences")
-
-    @st.cache_resource
-    def build_map_dataframe():
-        rows = []
-        for file in os.listdir(SEQUENCES_FOLDER):
-            if file.endswith(".fas"):
-                path = os.path.join(SEQUENCES_FOLDER, file)
-                with open(path, "r") as f:
-                    for line in f:
-                        if line.startswith(">"):
-                            header = line.strip().lstrip(">")
-                            parts = header.split("_")  # récuperation des génotypes
-                            genotype = parts[1] if len(parts) > 1 else "Unknown"
-                            lat, lon, label = parse_header_location(header)
-                            rows.append(
-                                {
-                                    "header": header,
-                                    "genotype": genotype,
-                                    "lat": lat,
-                                    "lon": lon,
-                                    "label": label,
-                                }
-                            )
-        return pd.DataFrame(rows)
-
-    df_map = build_map_dataframe()
-
-    # Nettoyer le DataFrame
-    df_map_clean = df_map[
-        (df_map["label"] != "Unknown")
-        & (df_map["lat"].notna())
-        & (df_map["lon"].notna())
-    ].copy()
-
-    # Déterminer la classe de chaque génotype
-    def get_class(genotype):
-        if genotype.startswith("I.") or genotype == "I":
-            return "Class I"
-        else:
-            return "Class II"
-
-    df_map_clean["class"] = df_map_clean["genotype"].apply(get_class)
-
-    # ── Filtres + Map ─────────────────────────────────────────────────────────────
-    col_filters, col_map = st.columns([1, 5])
-
-    available_genotypes = sorted(df_map_clean["genotype"].unique())
-
-    with col_filters:
-        st.subheader("Filters")
-        selected_genotypes = st.multiselect(
-            "Genotypes",
-            options=available_genotypes,
-            default=[],
-        )
-
-    # Appliquer les filtres
-    df_filtered = df_map_clean[df_map_clean["genotype"].isin(selected_genotypes)]
-
-    df_agg = (
-        df_filtered.groupby(["lat", "lon", "label"]).size().reset_index(name="count")
-    )
-
-    with col_map:
-        st.pydeck_chart(
-            pdk.Deck(
-                map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-                initial_view_state=pdk.ViewState(
-                    latitude=30.0,
-                    longitude=20.0,
-                    zoom=1,
-                    pitch=20,
-                ),
-                layers=[
-                    pdk.Layer(
-                        "HeatmapLayer",
-                        data=df_filtered,
-                        get_position="[lon, lat]",
-                        opacity=0.6,
-                        radius_pixels=70,
-                        color_range=[
-                            [0, 99, 153, 120],  # rappel le 4 nombres est l'intensité
-                            [0, 120, 170, 180],
-                            [0, 153, 180, 190],
-                            [0, 201, 167, 210],
-                            [100, 220, 180, 240],
-                            [255, 255, 200, 255],
-                        ],
-                    ),
-                    pdk.Layer(
-                        "ScatterplotLayer",
-                        data=df_agg,
-                        get_position="[lon, lat]",
-                        get_fill_color=[0, 0, 0, 200],
-                        get_line_color=[100, 220, 180, 255],
-                        stroked=True,
-                        line_width_min_pixels=1,
-                        get_radius=30000,
-                        pickable=True,
-                    ),
-                ],
-                tooltip={"text": "{label}\nSequences: {count}"},
-            )
-        )
-
-
-# ============================================================================
-# TAB 3: PHYLOGENETIC TREES
+# TAB 2: PHYLOGENETIC TREES
 # ============================================================================
 
 
+# fonction très complexe pour rien qui m'a servi à personnalisé l'arbre comme ce que je voulais exactement
 def tree_to_plotly(tree):
+
+    # initialisation des listes / coordonnées
     x_lines, y_lines, x_nodes, y_nodes, labels = [], [], [], [], []
     y_pos = {}
     counter = [0]
 
+    # fonction qui équilibre les espaces entre les feuilles de l'arbre
     def get_y(clade):
         if clade.is_terminal():
             y_pos[clade] = counter[0]
@@ -705,16 +531,20 @@ def tree_to_plotly(tree):
                 get_y(c)
             y_pos[clade] = sum(y_pos[c] for c in clade.clades) / len(clade.clades)
 
+    # fonction qui assigne la profondeur dans l'arbre (racine = 0, parents = 1 ...)
     def get_x(clade, x=0):
         clade.x = x
         for c in clade.clades:
             get_x(c, x + 1)
 
+    # calcul des positions
     get_y(tree.root)
     get_x(tree.root)
 
+    # trouve la profondeur max de l'arbre
     max_x = max(c.x for c in tree.find_clades())
 
+    # construit chaque trait de l'arbre pour l'affichage
     def collect(clade):
         for c in clade.clades:
             x_lines.append(clade.x)
@@ -731,19 +561,19 @@ def tree_to_plotly(tree):
             y_lines.append(None)
             collect(c)
 
-        # Extend leaf by a fixed amount
+        # étent la ligne final pour afficher correctement le header
         if clade.is_terminal():
             x_lines.append(clade.x)
-            x_lines.append(clade.x + 0.5)
+            x_lines.append(clade.x + 0.5)  # l'extension
             x_lines.append(None)
             y_lines.append(y_pos[clade])
             y_lines.append(y_pos[clade])
             y_lines.append(None)
-            x_nodes.append(clade.x + 0.5)  # ← leaf node at end of extension
+            x_nodes.append(clade.x + 0.5)  # l'extension
             labels.append((clade.name or "")[:40])
         else:
             x_nodes.append(clade.x)  # position normal des nodes
-            confidence = clade.confidence  # pour les bootstraps
+            confidence = clade.confidence  # calcul et affiche les bootstraps
             if confidence is not None and confidence >= 0.5:
                 labels.append(f"{confidence * 100:.1f}")
             else:
@@ -751,6 +581,7 @@ def tree_to_plotly(tree):
 
         y_nodes.append(y_pos[clade])
 
+    # récupère toute les coordonnées pour ploty
     collect(tree.root)
     return x_lines, y_lines, x_nodes, y_nodes, labels, counter[0], max_x
 
@@ -763,31 +594,34 @@ with tab_tree:
     else:
         all_sequences = st.session_state["all_sequences"]
 
-        # Build all trees once and cache them — avoids rebuilding on every rerender
-        # (e.g. when the user interacts with the map tab)
+        # Construction de tous les arbres une seule fois et les mettre en cache
         if "trees" not in st.session_state:
             st.session_state["trees"] = {}
 
         for header, sequence in all_sequences.items():
             if header not in st.session_state["trees"]:
                 with st.spinner(f"Building tree for {header[:40]}..."):
+                    # trouve les 20 séquences les plus proche
                     neighbours = find_closest_neighbours(sequence, references, n=20)
+                    # écrit un fasta temporaire pour les stocker
                     tmp_dir = os.path.join(DATA_FOLDER, "tmp")
                     os.makedirs(tmp_dir, exist_ok=True)
                     tmp_fasta = os.path.join(tmp_dir, "tmp_input.fasta")
                     tmp_aligned = os.path.join(tmp_dir, "tmp_aligned.fasta")
                     write_temp_fasta(header, sequence, neighbours, tmp_fasta)
+                    # alignes ces séquences avec mafft
                     align_sequences_mafft(tmp_fasta, tmp_aligned)
+                    # les sauvegardes dans session_state
                     st.session_state["trees"][header] = build_tree_fasttree(tmp_aligned)
 
-        # Create a tab per analysed sequence
+        # Créer un onglet par séquence analysé
         tree_tabs = st.tabs([h[:30] for h in all_sequences.keys()])
 
+        # L'affichage final
         for i, (header, sequence) in enumerate(all_sequences.items()):
             with tree_tabs[i]:
                 tree = st.session_state["trees"][header]
 
-                # Step 5 - display
                 x_lines, y_lines, x_nodes, y_nodes, labels, n_leaves, max_x = (
                     tree_to_plotly(tree)
                 )
@@ -795,7 +629,9 @@ with tab_tree:
                 node_colors = []
                 for label in labels:
                     if label.startswith("QUERY_"):
-                        node_colors.append("#00FF00")  # red for query
+                        node_colors.append(
+                            "#00FF00"
+                        )  # la couleur de la séquence analysé
                     else:
                         node_colors.append(get_color(label))
 
@@ -879,6 +715,195 @@ with tab_tree:
 
 
 # ============================================================================
+# TAB 3: GLOBAL DISTRIBUTION MAP
+# ============================================================================
+
+with tab_map:
+    st.header("Global Distribution Map")
+    st.markdown("Explore the geographic distribution of NDV genotypes worldwide.")
+
+    # chargement de toutes les données
+    @st.cache_resource
+    def load_locations_database():
+        df_china = pd.read_csv(os.path.join(LOCATION_FOLDER, "china_provinces.csv"))
+        df_us = pd.read_csv(os.path.join(LOCATION_FOLDER, "US_capitals.csv"))
+        df_world = pd.read_csv(os.path.join(LOCATION_FOLDER, "countries.csv"))
+        df_russia = pd.read_csv(os.path.join(LOCATION_FOLDER, "russia_regions.csv"))
+        return df_china, df_us, df_world, df_russia
+
+    df_china, df_us, df_world, df_russia = load_locations_database()
+
+    # définition des centroïdes des gros pays
+    CENTROIDS = {
+        "USA": (37.09, -95.71),
+        "China": (35.86, 104.19),
+        "Russia": (61.52, 105.31),
+    }
+
+    # fonction qui retourne la lat, lon et les labels
+    def parse_header_location(header):
+        parts = header.split("_")
+        padded = "_" + "_".join(parts) + "_"  # pour chercher _XX_ proprement
+
+        # Détection du pays
+        country = None
+        if "_USA_" in padded:
+            country = "USA"
+        elif "_China_" in padded:
+            country = "China"
+        elif "_Russia_" in padded:
+            country = "Russia"
+        else:
+            # Cherche dans la colonne country du CSV monde
+            for _, row in df_world.iterrows():
+                if f"_{row['country']}_" in padded:
+                    return row["lat"], row["lon"], row["country"]
+            return None, None, "Unknown"
+
+        # Détection de la région
+        if country == "USA":
+            # abréviation (_PA_, _NY_...)
+            for _, row in df_us.iterrows():
+                if f"_{row['abbreviation_us']}_" in padded:
+                    return row["lat"], row["lon"], f"{row['state']}, USA"
+            # nom complet (_New_York_...)
+            for _, row in df_us.iterrows():
+                state_fmt = row["state"]  # déjà avec _ dans le CSV ex: New_York
+                if f"_{state_fmt}_" in padded:
+                    return row["lat"], row["lon"], f"{row['state']}, USA"
+            # Fallback
+            return CENTROIDS["USA"][0], CENTROIDS["USA"][1], "USA"
+
+        if country == "China":
+            # abréviation (_AH_, _BJ_...)
+            for _, row in df_china.iterrows():
+                if f"_{row['abbreviation_cn']}_" in padded:
+                    return row["lat"], row["lon"], f"{row['province']}, China"
+            # nom complet (_Shanghai_...)
+            for _, row in df_china.iterrows():
+                if f"_{row['province']}_" in padded:
+                    return row["lat"], row["lon"], f"{row['province']}, China"
+            # Fallback
+            return CENTROIDS["China"][0], CENTROIDS["China"][1], "China"
+
+        if country == "Russia":
+            # Nom de région (_Novosibirsk_, _FarEast_, _Amur_region_...)
+            for _, row in df_russia.iterrows():
+                if f"_{row['region_ru']}_" in padded:
+                    return row["lat"], row["lon"], f"{row['region_ru']}, Russia"
+            # Fallback
+            return CENTROIDS["Russia"][0], CENTROIDS["Russia"][1], "Russia"
+
+    SEQUENCES_FOLDER = os.path.join(DATA_FOLDER, "sequences")
+
+    # création d'un dataframe avec header, loc et genotype
+    @st.cache_resource
+    def build_map_dataframe():
+        rows = []
+        for file in os.listdir(SEQUENCES_FOLDER):
+            if file.endswith(".fas"):
+                path = os.path.join(SEQUENCES_FOLDER, file)
+                with open(path, "r") as f:
+                    for line in f:
+                        if line.startswith(">"):
+                            header = line.strip().lstrip(">")
+                            parts = header.split("_")  # récuperation des génotypes
+                            genotype = parts[1] if len(parts) > 1 else "Unknown"
+                            lat, lon, label = parse_header_location(header)
+                            rows.append(
+                                {
+                                    "header": header,
+                                    "genotype": genotype,
+                                    "lat": lat,
+                                    "lon": lon,
+                                    "label": label,
+                                }
+                            )
+        return pd.DataFrame(rows)
+
+    df_map = build_map_dataframe()
+
+    # Nettoyer le DataFrame
+    df_map_clean = df_map[
+        (df_map["label"] != "Unknown")
+        & (df_map["lat"].notna())
+        & (df_map["lon"].notna())
+    ].copy()
+
+    # Déterminer la classe de chaque génotype
+    def get_class(genotype):
+        if genotype.startswith("I.") or genotype == "I":
+            return "Class I"
+        else:
+            return "Class II"
+
+    df_map_clean["class"] = df_map_clean["genotype"].apply(get_class)
+
+    # Affichage des filtres + Map
+    col_filters, col_map = st.columns([1, 5])
+
+    available_genotypes = sorted(df_map_clean["genotype"].unique())
+
+    with col_filters:
+        st.subheader("Filters")
+        selected_genotypes = st.multiselect(
+            "Genotypes",
+            options=available_genotypes,
+            default=[],
+        )
+
+    # Appliquer les filtres
+    df_filtered = df_map_clean[df_map_clean["genotype"].isin(selected_genotypes)]
+
+    df_agg = (
+        df_filtered.groupby(["lat", "lon", "label"]).size().reset_index(name="count")
+    )
+
+    # affichage de la carte avec pydeck
+    with col_map:
+        st.pydeck_chart(
+            pdk.Deck(
+                map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+                initial_view_state=pdk.ViewState(
+                    latitude=30.0,
+                    longitude=20.0,
+                    zoom=1,
+                    pitch=20,
+                ),
+                layers=[
+                    pdk.Layer(
+                        "HeatmapLayer",
+                        data=df_filtered,
+                        get_position="[lon, lat]",
+                        opacity=0.6,
+                        radius_pixels=70,
+                        color_range=[
+                            [0, 99, 153, 120],  # rappel le 4ème nombres est l'intensité
+                            [0, 120, 170, 180],
+                            [0, 153, 180, 190],
+                            [0, 201, 167, 210],
+                            [100, 220, 180, 240],
+                            [255, 255, 200, 255],
+                        ],
+                    ),
+                    pdk.Layer(
+                        "ScatterplotLayer",
+                        data=df_agg,
+                        get_position="[lon, lat]",
+                        get_fill_color=[0, 0, 0, 200],
+                        get_line_color=[100, 220, 180, 255],
+                        stroked=True,
+                        line_width_min_pixels=1,
+                        get_radius=30000,
+                        pickable=True,
+                    ),
+                ],
+                tooltip={"text": "{label}\nSequences: {count}"},
+            )
+        )
+
+
+# ============================================================================
 # TAB 4: Help
 # ============================================================================
 
@@ -889,7 +914,7 @@ with help_tab:
     )
     st.divider()
 
-    info_tab, stat_tab = st.tabs(["Information", "Statistics"])
+    info_tab, stat_tab = st.tabs(["Informations", "Statistics"])
 
     with info_tab:
         with open("QUICK_START.md", "r", encoding="utf-8") as f:
@@ -902,15 +927,15 @@ with help_tab:
 
         db_references, db_files_count, db_total_count, _ = load_all_references()
 
-        # ── Parse all fields from every header ────────────────────────────────────
+        # analyse de tout les champs de chaque header
         genotype_counts = {}
         class_counts = {"Class I": 0, "Class II": 0}
         host_counts = {}
         country_counts = {}
         year_counts = {}
 
-        # Normalisation des noms d'hôtes — chargé depuis data/hosts/host_normalize.csv
-        # Pour ajouter un hôte : rajouter une ligne  raw_host,normalized_host  dans le CSV
+        # Normalisation des noms d'hôtes
+        # Pour ajouter un hôte rajouter une ligne raw_host,normalized_host  dans le CSV
         _df_host_map = pd.read_csv(
             os.path.join(DATA_FOLDER, "hosts", "host_normalize.csv")
         )
@@ -918,14 +943,13 @@ with help_tab:
             zip(_df_host_map["raw_host"].str.lower(), _df_host_map["normalized_host"])
         )
 
-        # Set of known country names (lowercased) to detect when host field is missing
         KNOWN_COUNTRIES = set(df_world["country"].str.lower()) | {
             "china",
             "usa",
             "russia",
         }
 
-        # US state abbreviations pulled directly from the CSV
+        # US abbreviations
         US_STATE_ABBREVS = set(df_us["abbreviation_us"].str.lower())
 
         for header in db_references.keys():
@@ -944,7 +968,7 @@ with help_tab:
             # Filtrage des animaux
             host_idx = 5
             if len(parts) > 5 and parts[5] == "1":
-                host_idx = 6  # shift past the spurious '1'
+                host_idx = 6  # parfoit un "1" inexpliqué dans le header
             if len(parts) > host_idx:
                 raw_host = parts[host_idx].lower()
                 if (
@@ -955,20 +979,20 @@ with help_tab:
                     or raw_host.startswith("ndv")
                     or raw_host.startswith("aoav")
                 ):
-                    # Empty, country, state abbrev, or virus label — host is missing
+                    # si hôte non reconnus
                     host = "Unspecified"
                 else:
                     host = HOST_NORMALIZE.get(raw_host, "Other")
                 host_counts[host] = host_counts.get(host, 0) + 1
 
-            # Filtrage des Pays
+            # Filtrage des pays
             country_idx = host_idx + 1
             if len(parts) > country_idx:
                 raw_country = parts[country_idx]
                 if raw_country and not raw_country.isdigit() and len(raw_country) > 1:
                     country_counts[raw_country] = country_counts.get(raw_country, 0) + 1
 
-            # Filtrage des Années
+            # Filtrage des années
             last = parts[-1]
             if last.isdigit() and len(last) == 4:
                 year_counts[last] = year_counts.get(last, 0) + 1
@@ -994,7 +1018,7 @@ with help_tab:
 
         st.divider()
 
-        # Ligne 1: sequences par genotype et class pie chart
+        # sequences par genotype et class pie chart
         col_bar, col_pie = st.columns([3, 1])
 
         with col_bar:
@@ -1048,7 +1072,7 @@ with help_tab:
 
         st.divider()
 
-        # Ligne 2: Distribution Temporel des séquences
+        # distribution temporel des séquences
         st.subheader("Sequences by Year")
         df_years = pd.DataFrame(
             sorted(
@@ -1083,18 +1107,18 @@ with help_tab:
 
         st.divider()
 
-        # Ligne 3: Pie Chart des hôtes et Graph des Pays
+        # pie chart des hôtes et graph des pays
         col_host, col_country = st.columns([4, 6])
 
         with col_host:
             st.subheader("Host Distribution")
-            # Sort: Unspecified first (greyed out), then by count descending
             host_items = sorted(host_counts.items(), key=lambda x: x[1], reverse=True)
             host_items = [(k, v) for k, v in host_items if k == "Unspecified"] + [
                 (k, v) for k, v in host_items if k != "Unspecified"
             ]
             df_hosts = pd.DataFrame(host_items, columns=["Host", "Sequences"])
 
+            # palette importé depuis ColorBrewer
             PALETTE = [
                 "#0099cc",
                 "#00c9a7",
@@ -1144,6 +1168,7 @@ with help_tab:
             )
             st.plotly_chart(fig_host, width="stretch")
 
+        # affichage du graph des pays
         with col_country:
             st.subheader("Top 15 Countries")
             df_countries = pd.DataFrame(
@@ -1177,7 +1202,9 @@ with help_tab:
 
         st.divider()
 
-        # Dernière Ligne: Santé actuel du jeu de donnée
+        # check-up de la santé actuel du jeu de donnée
+        # trop peu de séquence dans un génotype n'est pas un bonne chose pour les analyses
+        # pour ça on créer un dataframe avec les génotypes et leurs comptes
         st.subheader("⚠ Database Coverage Health")
         THRESHOLD = 15
         df_health = df_genotypes.copy()
@@ -1209,5 +1236,6 @@ with help_tab:
             st.markdown("**Genotypes needing urgent attention:**")
             st.dataframe(critical, width="stretch", hide_index=True)
 
+        # affichage du dataframe si nécessaire
         with st.expander("View full coverage table"):
             st.dataframe(df_health, width="stretch", hide_index=True)
