@@ -11,6 +11,7 @@ st_datas,     st_binaries,     st_hiddenimports     = collect_all('streamlit')
 bio_datas,    bio_binaries,    bio_hiddenimports     = collect_all('Bio')
 altair_datas, altair_binaries, altair_hiddenimports  = collect_all('altair')
 pydeck_datas, pydeck_binaries, pydeck_hiddenimports  = collect_all('pydeck')
+pv_datas,     pv_binaries,     pv_hiddenimports      = collect_all('webview')
 plotly_datas  = collect_data_files('plotly')
 
 a = Analysis(
@@ -20,13 +21,15 @@ a = Analysis(
         st_binaries +
         bio_binaries +
         altair_binaries +
-        pydeck_binaries
+        pydeck_binaries +
+        pv_binaries
     ),
     datas=(
         st_datas +
         bio_datas +
         altair_datas +
         pydeck_datas +
+        pv_datas +
         plotly_datas +
         [
             # Application source (Streamlit reads app.py as a text file at runtime)
@@ -45,6 +48,7 @@ a = Analysis(
         bio_hiddenimports +
         altair_hiddenimports +
         pydeck_hiddenimports +
+        pv_hiddenimports +
         [
             # Plotly
             'plotly',
