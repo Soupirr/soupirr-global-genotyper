@@ -67,6 +67,9 @@ a = Analysis(
             'tornado.websocket',
             'tornado.httpserver',
             # Other
+            'webview',
+            'webview.platforms.winforms',
+            'webview.platforms.edgechromium',
             'pyarrow',
             'click',
             'watchdog',
