@@ -475,7 +475,8 @@ def unpack_top_match(top_match):
 # fonction de construction de l'arbre avec FastTree
 def build_tree_fasttree(aln_file):
     result = subprocess.run(
-        [get_fasttree_cmd(), "-nt", "-gtr", aln_file], capture_output=True, text=True
+        [get_fasttree_cmd(), "-nt", "-gtr", aln_file], capture_output=True, text=True,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
     newick_str = result.stdout
     tree = Phylo.read(io.StringIO(newick_str), "newick")
@@ -489,6 +490,7 @@ def align_sequences_mafft(input_fasta_path, output_fasta_path):
             [get_mafft_cmd(), "--auto", input_fasta_path],
             stdout=out,
             stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
 
 
