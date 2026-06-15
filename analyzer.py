@@ -8,25 +8,29 @@ import subprocess
 from Bio import Phylo
 import io
 import os
+import platform
+import shutil
 
 # ============================================================================
 # ============================================================================
 
-# Fonctions qui permet d'importer les package FastTree et Mafft soit à partir de Windows soit à partir de WSL
+# Fonctions qui permet d'importer les package FastTree et Mafft sur Linux peut import ou ils sont
 
 
 def get_mafft_cmd():
-    if os.path.exists("/usr/bin/mafft"):  # WSL/Linux
-        return "mafft"
-    else:  # Windows
+    system_mafft = shutil.which("mafft")
+    if system_mafft:
+        return system_mafft
+    else:  # Windows packaged
         base_dir = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(base_dir, "tools", "mafft-win", "mafft.bat")
 
 
 def get_fasttree_cmd():
-    if os.path.exists("/usr/bin/FastTree"):  # WSL/Linux
-        return "FastTree"
-    else:  # Windows
+    system_fasttree = shutil.which("FastTree") or shutil.which("fasttree")
+    if system_fasttree:
+        return system_fasttree
+    else:  # Windows packaged
         base_dir = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(base_dir, "tools", "FastTree.exe")
 
@@ -474,11 +478,16 @@ def unpack_top_match(top_match):
 
 # fonction de construction de l'arbre avec FastTree
 def build_tree_fasttree(aln_file):
+    win_flags = (
+        {"creationflags": subprocess.CREATE_NO_WINDOW}
+        if platform.system() == "Windows"
+        else {}
+    )
     result = subprocess.run(
         [get_fasttree_cmd(), "-nt", "-gtr", aln_file],
         capture_output=True,
         text=True,
-        creationflags=subprocess.CREATE_NO_WINDOW,
+        **win_flags,
     )
     newick_str = result.stdout
     tree = Phylo.read(io.StringIO(newick_str), "newick")
@@ -487,12 +496,17 @@ def build_tree_fasttree(aln_file):
 
 # alignement des séquences avec Mafft
 def align_sequences_mafft(input_fasta_path, output_fasta_path):
+    win_flags = (
+        {"creationflags": subprocess.CREATE_NO_WINDOW}
+        if platform.system() == "Windows"
+        else {}
+    )
     with open(output_fasta_path, "w") as out:
         subprocess.run(
             [get_mafft_cmd(), "--auto", input_fasta_path],
             stdout=out,
             stderr=subprocess.PIPE,
-            creationflags=subprocess.CREATE_NO_WINDOW,
+            **win_flags,
         )
 
 

@@ -278,9 +278,11 @@ with tab_analyze:
                         similarity_method=method,
                     )
                     all_results.append(result)
-                winsound.PlaySound(
-                    "misc/notification.wav", winsound.SND_FILENAME | winsound.SND_ASYNC
-                )
+                if platform.system() == "Windows":
+                    winsound.PlaySound(
+                        "misc/notification.wav",
+                        winsound.SND_FILENAME | winsound.SND_ASYNC,
+                    )
                 progress_bar.progress(1, text="Analysis complete!")
 
                 # sauvegarde des informations de l'analyse
