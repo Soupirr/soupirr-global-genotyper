@@ -2,13 +2,12 @@
 
 A Streamlit web application for Newcastle Disease Virus F gene genotyping.
 
----
 
 ## Download
 
 Pre-built Windows executable available on the [Releases page](../../releases/latest).
 
-Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe` — no Python required.
+Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe` - no Python required.
 
 ---
 
@@ -58,9 +57,9 @@ For more information on how to use the app and how to add sequences to the datab
 
 ## References
 
-- **MAFFT** — Katoh K, Standley DM. *MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability.* Molecular Biology and Evolution, 30(4):772–780, 2013. https://doi.org/10.1093/molbev/mst010
+- **MAFFT** - Katoh K, Standley DM. *MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability.* Molecular Biology and Evolution, 30(4):772–780, 2013. https://doi.org/10.1093/molbev/mst010
 
-- **FastTree** — Price MN, Dehal PS, Arkin AP. *FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments.* PLOS ONE, 5(3):e9490, 2010. https://doi.org/10.1371/journal.pone.0009490
+- **FastTree** - Price MN, Dehal PS, Arkin AP. *FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments.* PLOS ONE, 5(3):e9490, 2010. https://doi.org/10.1371/journal.pone.0009490
 
 - **Dimitrov et al. (2019)** - Updated unified phylogenetic classification system and revised
 nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917

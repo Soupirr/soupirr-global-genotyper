@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-#
+# Generated Using Claude
 # PyInstaller spec file for NDV Genotyper
 # Run with: pyinstaller NDVGenotyper.spec
 #
@@ -101,7 +101,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,      # UPX can break some DLLs — keep off for safety
+    upx=False,      
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,

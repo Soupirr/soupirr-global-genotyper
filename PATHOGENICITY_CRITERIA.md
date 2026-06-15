@@ -1,4 +1,4 @@
-# Newcastle Disease Virus — Pathogenicity Criteria
+# Newcastle Disease Virus - Pathogenicity Criteria
 
 Based on: **Dimitrov et al. (2019)** and **Wang et al. (2017)**
 
@@ -6,7 +6,7 @@ Based on: **Dimitrov et al. (2019)** and **Wang et al. (2017)**
 
 ## Overview
 
-Pathogenicity is determined by analyzing the **F protein cleavage site** — a sequence of 6 amino acids (positions 113-118) in the fusion protein. This tool searches for this motif within a ±15 nucleotide window around position 333 bp to account for insertions/deletions.
+Pathogenicity is determined by analyzing the **F protein cleavage site** - a sequence of 6 amino acids (positions 113-118) in the fusion protein. This tool searches for this motif within a ±15 nucleotide window around position 333 bp to account for insertions/deletions.
 
 ---
 
@@ -57,8 +57,8 @@ No known motif was found in the expected region. The sequence may be incomplete,
 
 ## Important Notes
 
-- This tool uses **motif-based detection** — results depend entirely on whether the cleavage site matches a known pattern from Wang et al. (2017)
-- Results are reported as **"Likely"** Virulent or Low-virulence — molecular analysis alone is not sufficient for definitive pathogenicity classification
+- This tool uses **motif-based detection** - results depend entirely on whether the cleavage site matches a known pattern from Wang et al. (2017)
+- Results are reported as **"Likely"** Virulent or Low-virulence - molecular analysis alone is not sufficient for definitive pathogenicity classification
 - The **ICPI (Intracerebral Pathogenicity Index)** remains the gold standard for official virulence determination (OIE/WOAH)
 - Sequences shorter than ~320 bp may not contain the cleavage site region and will return Undetermined
 
@@ -66,6 +66,6 @@ No known motif was found in the expected region. The sequence may be incomplete,
 
 ## References
 
-**Wang Y. et al. (2017)** — Characterization of Newcastle disease viruses isolated from chicken and goose flocks between 2013 and 2015 in some regions of China. *PLOS ONE*. https://doi.org/10.1371/journal.pone.0183923
+**Wang Y. et al. (2017)** - Characterization of Newcastle disease viruses isolated from chicken and goose flocks between 2013 and 2015 in some regions of China. *PLOS ONE*. https://doi.org/10.1371/journal.pone.0183923
 
-**Dimitrov K.M. et al. (2019)** — Updated unified phylogenetic classification system and revised nomenclature for Newcastle disease virus. *Infect. Genet. Evol.* https://doi.org/10.1016/j.meegid.2019.103917
+**Dimitrov K.M. et al. (2019)** - Updated unified phylogenetic classification system and revised nomenclature for Newcastle disease virus. *Infect. Genet. Evol.* https://doi.org/10.1016/j.meegid.2019.103917

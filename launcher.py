@@ -1,5 +1,6 @@
 """
 NDV Genotyper - Entry point for the packaged .exe
+Generated Using Claude
 """
 
 import sys
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     # Unblock DLLs before importing webview (required after downloading from internet)
     unblock_dlls()
 
-    import webview  # Late import — must happen after unblock_dlls()
+    import webview  # must happen after unblock_dlls()
 
     base_path = get_base_path()
     os.chdir(base_path)

@@ -1,8 +1,8 @@
-# NDV Sequence Analyzer — Quick Start Guide
+# NDV Sequence Analyzer - Quick Start Guide
 
 ---
 
-## ⚠️ IMPORTANT — Adding New Sequences to the Database
+## ⚠️ IMPORTANT - Adding New Sequences to the Database
 
 Before adding any new sequences to the database, **every sequence header must strictly follow this format:**
 
@@ -45,22 +45,22 @@ The NDV Sequence Analyzer is a bioinformatics tool designed to identify the geno
 
 This is the main tab of the app. It allows you to identify the genotype and pathogenicity of one or multiple NDV F gene sequences.
 
-**Step 1 — Choose your similarity method**
+**Step 1 - Choose your similarity method**
 
 In the left configuration panel, select one of two methods:
 
-- **Hamming (fast)** — compares sequences position by position. Very fast but requires sequences of similar length. Results below 95% similarity may not be reliable due to insertions/deletions.
-- **Pairwise Alignment (accurate)** — performs a global pairwise alignment before comparing. Handles insertions and deletions correctly. Recommended for sequences that may differ in length from the reference. Takes approximately 30 seconds per sequence.
+- **Hamming (fast)** - compares sequences position by position. Very fast but requires sequences of similar length. Results below 95% similarity may not be reliable due to insertions/deletions.
+- **Pairwise Alignment (accurate)** - performs a global pairwise alignment before comparing. Handles insertions and deletions correctly. Recommended for sequences that may differ in length from the reference. Takes approximately 30 seconds per sequence.
 
-**Step 2 — Choose the number of top matches**
+**Step 2 - Choose the number of top matches**
 
 Use the slider to select how many top matching genotypes you want to see in the results (1 to 10, default 3).
 
-**Step 3 — Input your sequence**
+**Step 3 - Input your sequence**
 
 You have two options:
-- **Paste FASTA** — paste one or multiple sequences directly in FASTA format
-- **Upload File** — upload a `.fasta`, `.fas`, `.fa`, or `.txt` file
+- **Paste FASTA** - paste one or multiple sequences directly in FASTA format
+- **Upload File** - upload a `.fasta`, `.fas`, `.fa`, or `.txt` file
 
 Your input must be in FASTA format:
 ```
@@ -68,9 +68,9 @@ Your input must be in FASTA format:
 ATGGGCTCCAGACCT...
 ```
 
-Multiple sequences are supported — each sequence will be analyzed individually and results displayed in separate tabs.
+Multiple sequences are supported - each sequence will be analyzed individually and results displayed in separate tabs.
 
-**Step 4 — Analyze**
+**Step 4 - Analyze**
 
 Click **Analyze Sequences** to start the analysis. A progress bar will show the status for each sequence.
 
@@ -80,9 +80,9 @@ Click **Analyze Sequences** to start the analysis. A progress bar will show the 
 
 Results are displayed in individual tabs for each sequence analyzed.
 
-**Sequence Information** — header and length of your input sequence.
+**Sequence Information** - header and length of your input sequence.
 
-**Genotype Identification** — shows:
+**Genotype Identification** - shows:
 - Detected class (Class I or Class II)
 - Best matching genotype
 - Average similarity percentage
@@ -91,17 +91,17 @@ Results are displayed in individual tabs for each sequence analyzed.
 
 A warning will appear if similarity is below 95% when using the Hamming method.
 
-**Pathogenicity Analysis** — analyzes the F protein cleavage site region (positions ~333–357 bp) using a ±15 nucleotide window to account for insertions/deletions. Motifs are classified according to Dimitrov et al. 2019:
+**Pathogenicity Analysis** - analyzes the F protein cleavage site region (positions ~333–357 bp) using a ±15 nucleotide window to account for insertions/deletions. Motifs are classified according to Dimitrov et al. 2019:
 
 | Result | Meaning |
 |---|---|
 | **Likely Virulent** | A known virulent cleavage motif (VFcs-1 to VFcs-8) was found |
 | **Likely Low-virulence** | A known avirulent cleavage motif (AFcs-1 to AFcs-10) was found |
-| **Undetermined** | No known motif was found — sequence may be incomplete or unusual |
+| **Undetermined** | No known motif was found - sequence may be incomplete or unusual |
 
 > ⚠️ Pathogenicity prediction is based solely on the F protein cleavage site motif. This is a strong indicator but not the only criterion for virulence. Results should always be interpreted in the context of additional biological data.
 
-**Export** — at the bottom of the page, a summary table shows all analyzed sequences. You can download it as a CSV file with a timestamp in the filename.
+**Export** - at the bottom of the page, a summary table shows all analyzed sequences. You can download it as a CSV file with a timestamp in the filename.
 
 ---
 
@@ -174,4 +174,4 @@ https://doi.org/10.1016/j.meegid.2019.103917
 
 **Source:** https://github.com/Soupirr/NDV-genotyper
 
-*NDV Sequence Analyzer — developed as part of a bioinformatics internship project*
+*NDV Sequence Analyzer - developed as part of a bioinformatics internship project*
