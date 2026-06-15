@@ -11,37 +11,33 @@ Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe` 
 
 ---
 
-## Run from source
+## Run from source (Linux / WSL)
 
 ### Requirements
 
-- Python 3.9+
-- [MAFFT](https://mafft.cbrc.jp/alignment/software/)
-- [FastTree](http://www.microbesonline.org/fasttree/)
+```bash
+sudo apt install mafft fasttree
+pip install -r requirements.txt
+```
 
-### Windows
-
-Make sure `mafft.exe` and `FastTree.exe` are in your PATH (installed by default in the project folder), then run:
+Then run:
 
 ```bash
 streamlit run app.py
 ```
 
-### WSL (Ubuntu)
-
-Make sure `mafft` and `FastTree` are installed (`sudo apt install mafft fasttree`), then run:
-
-```bash
-streamlit run app.py
-```
-
-The app will open automatically in your browser at `http://localhost:8501`.
+The app will open in your browser at `http://localhost:8501`.
 
 ---
 
-## Build the executable
+## Build the Windows executable
 
-Requires [PyInstaller](https://pyinstaller.org) (`pip install pyinstaller`):
+The Windows executable requires the MAFFT and FastTree Windows binaries placed in a `tools/` folder (not tracked by git).
+
+1. Download [MAFFT for Windows](https://mafft.cbrc.jp/alignment/software/windows.html) and extract it to `tools/mafft-win/`
+2. Download [FastTree](http://www.microbesonline.org/fasttree/) (`FastTree.exe`) and place it in `tools/`
+3. Install PyInstaller: `pip install pyinstaller`
+4. Run:
 
 ```bash
 pyinstaller NDVGenotyper.spec

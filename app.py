@@ -4,7 +4,7 @@ Streamlit Web Application
 """
 
 import streamlit as st
-import winsound
+
 import pandas as pd
 import time
 import plotly.graph_objects as go
@@ -23,6 +23,10 @@ from analyzer import (
 )
 import os
 import pydeck as pdk
+import platform
+
+if platform.system() == "Windows":
+    import winsound
 
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), "data")
 SEQ_FOLDER = os.path.join(DATA_FOLDER, "sequences")
@@ -446,23 +450,23 @@ with tab_analyze:
                             )
 
                         pathogenicity = cleavage["pathogenicity"]
-                        confidence = cleavage["confidence"]
+                        confidence_path = cleavage["confidence"]
 
                         # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
                         if "Likely Virulent" in pathogenicity:
-                            st.error(f"Likely Virulent (Confidence: {confidence})")
+                            st.error(f"Likely Virulent (Confidence: {confidence_path})")
                             st.write(
                                 "This sequence shows characteristics of a virulent strain with polybasic cleavage site (≥3 basic residues at positions 113-116 + F at position 117)."
                             )
                         elif "Likely Low-virulence" in pathogenicity:
                             st.success(
-                                f"Likely Low-virulence (Confidence: {confidence})"
+                                f"Likely Low-virulence (Confidence: {confidence_path})"
                             )
                             st.write(
                                 "This sequence shows characteristics of a low-virulence strain with monobasic or L117 cleavage site."
                             )
                         else:
-                            st.warning(f"Undetermined (Confidence: {confidence})")
+                            st.warning(f"Undetermined (Confidence: {confidence_path})")
                             st.write(
                                 "No known cleavage site motif was found in the expected region. "
                                 "The sequence may be incomplete, contain too many indels, or represent an unusual strain."
