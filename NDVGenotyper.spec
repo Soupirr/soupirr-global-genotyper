@@ -33,11 +33,12 @@ a = Analysis(
         plotly_datas +
         [
             # Application source (Streamlit reads app.py as a text file at runtime)
-            ('app.py',      '.'),
-            ('analyzer.py', '.'),
+            ('app.py',         '.'),
+            ('analyzer.py',    '.'),
+            ('QUICK_START.md', '.'),
             # Data files required by the app
             ('data',        'data'),
-            ('image',       'image'),
+            ('misc',       'misc'),
             ('tools',       'tools'),
             # Streamlit theme config
             ('.streamlit',  '.streamlit'),
@@ -79,12 +80,13 @@ a = Analysis(
             'watchdog',
             'packaging',
             'importlib_metadata',
+            'winsound',
         ]
     ),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['torch', 'torchvision', 'torchaudio', 'torch.distributed', 'torch.cuda'],
     noarchive=False,
 )
 
@@ -106,7 +108,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='image\\icon.png',
+    icon='misc\\icon.png',
 )
 
 coll = COLLECT(

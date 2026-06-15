@@ -32,8 +32,11 @@ def streamlit_process(app_path, base_path):
     """Runs Streamlit in its own process so it gets a proper main thread."""
     os.chdir(base_path)
     from streamlit.web import cli as stcli
+
     sys.argv = [
-        "streamlit", "run", app_path,
+        "streamlit",
+        "run",
+        app_path,
         "--server.headless=true",
         "--global.developmentMode=false",
         "--server.port=8501",
@@ -71,12 +74,10 @@ if __name__ == "__main__":
     wait_for_streamlit()
 
     def set_icon():
-        icon_path = os.path.join(base_path, "image", "icon.png")
+        icon_path = os.path.join(base_path, "misc", "icon.png")
         hwnd = ctypes.windll.user32.FindWindowW(None, "NDV Genotyper")
         if hwnd:
-            hicon = ctypes.windll.user32.LoadImageW(
-                None, icon_path, 1, 0, 0, 0x10
-            )
+            hicon = ctypes.windll.user32.LoadImageW(None, icon_path, 1, 0, 0, 0x10)
             if hicon:
                 ctypes.windll.user32.SendMessageW(hwnd, 0x80, 0, hicon)
                 ctypes.windll.user32.SendMessageW(hwnd, 0x80, 1, hicon)
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         "NDV Genotyper", "http://127.0.0.1:8501", maximized=True
     )
     window.events.loaded += set_icon
-    webview.start(gui='edgechromium')
+    webview.start(gui="edgechromium")
 
     p.terminate()
     p.join(timeout=3)

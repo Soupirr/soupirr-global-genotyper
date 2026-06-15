@@ -3,8 +3,8 @@ Newcastle Disease Virus F Gene Genotyper
 Streamlit Web Application
 """
 
-from datetime import datetime
 import streamlit as st
+import winsound
 import pandas as pd
 import time
 import plotly.graph_objects as go
@@ -31,7 +31,7 @@ LOCATION_FOLDER = os.path.join(DATA_FOLDER, "locations")
 # Page configuration
 st.set_page_config(
     page_title="NDV Genotyper",
-    page_icon="image/icon.png",
+    page_icon="misc/icon.png",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -274,6 +274,9 @@ with tab_analyze:
                         similarity_method=method,
                     )
                     all_results.append(result)
+                winsound.PlaySound(
+                    "misc/notification.wav", winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
                 progress_bar.progress(1, text="Analysis complete!")
 
                 # sauvegarde des informations de l'analyse
@@ -471,7 +474,7 @@ with tab_analyze:
 
             # Exportation des résultats dans un fichier .csv
             st.divider()
-            st.subheader("Export Results")
+            st.subheader("Full Analysis Details:")
 
             export_rows = []  # Tableau de fin
             for results in all_results:
@@ -494,17 +497,6 @@ with tab_analyze:
                 )
 
             export_df = pd.DataFrame(export_rows)
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            csv = export_df.to_csv(index=False)
-            st.download_button(
-                label="Download Results as CSV",
-                data=csv,
-                file_name=f"ndv_analysis_results_{timestamp}.csv",  # donne la date actuel au fichier
-                mime="text/csv",
-            )
-
-            st.write("**Full Analysis Details:**")
             st.dataframe(export_df, width="stretch", hide_index=True)
 
 
