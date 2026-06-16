@@ -145,16 +145,6 @@ with tab_analyze:
         """)
         st.stop()
 
-    # Count unique genotypes
-    unique_genotypes = (
-        set()
-    )  # set() permet d'ajouter des données en ignorant les doublons
-    for header in references.keys():  # parcours les headers du dict du jeu de données
-        parts = header.split("_")  # coupe au niveau des "_"
-        if len(parts) >= 2:  # vérifie qu'il y a au moins 2 morceaux après le découpage
-            genotype = parts[1]  # prend le 2ème morceau (le génotype)
-            unique_genotypes.add(genotype)  # l'ajoute à "unique_genotype"
-
     # Display dataset info
     col1, col2, _ = st.columns([2, 2, 6])
     with col1:
@@ -827,15 +817,6 @@ with tab_map:
         & (df_map["lat"].notna())
         & (df_map["lon"].notna())
     ].copy()
-
-    # Déterminer la classe de chaque génotype
-    def get_class(genotype):
-        if genotype.startswith("I.") or genotype == "I":
-            return "Class I"
-        else:
-            return "Class II"
-
-    df_map_clean["class"] = df_map_clean["genotype"].apply(get_class)
 
     # Affichage des filtres + Map
     col_filters, col_map = st.columns([1, 5])
