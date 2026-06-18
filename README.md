@@ -8,7 +8,7 @@ A Streamlit web application for Newcastle Disease Virus F gene genotyping.
 
 Pre-built Windows executable available on the [Releases page](../../releases/latest).
 
-Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe` - no Python required.
+Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe`.
 
 ---
 
@@ -16,8 +16,16 @@ Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe` 
 
 ### Requirements
 
+Python 3.9+ is required. Install system dependencies:
+
 ```bash
-sudo apt install mafft fasttree
+sudo apt install python3 python3-pip mafft fasttree
+```
+
+Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
 ```
 
 Then run:

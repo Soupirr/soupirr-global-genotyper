@@ -7,14 +7,11 @@ import streamlit as st
 import pandas as pd
 import time
 import plotly.graph_objects as go
-import plotly.colors
 from analyzer import (
     FASTAParser,
     analyze_newcastle_sequence,
     unpack_top_match,
     get_class,
-)
-from analyzer import (
     build_tree_fasttree,
     get_color,
     align_sequences_mafft,
@@ -22,6 +19,7 @@ from analyzer import (
     write_temp_fasta,
     SequenceSimilarity,
 )
+
 import os
 import pydeck as pdk
 import platform
@@ -893,7 +891,9 @@ with tab_map:
         return pd.DataFrame(rows)
 
     if "map_loaded" not in st.session_state:
-        st.info("The map database contains thousands of sequences and may take a few seconds to load.")
+        st.info(
+            "The map database contains thousands of sequences and may take a few seconds to load."
+        )
         if st.button("Load Map", type="primary"):
             st.session_state["map_loaded"] = True
             st.rerun()
@@ -925,11 +925,17 @@ with tab_map:
         df_filtered = df_map_clean[df_map_clean["genotype"].isin(selected_genotypes)]
 
         df_report = df_filtered.copy()
-        df_report["country"] = df_report["label"].apply(lambda x: x.split(",")[-1].strip())
-        df_report["continent"] = df_report["country"].map(CONTINENT_MAP).fillna("Unknown")
+        df_report["country"] = df_report["label"].apply(
+            lambda x: x.split(",")[-1].strip()
+        )
+        df_report["continent"] = (
+            df_report["country"].map(CONTINENT_MAP).fillna("Unknown")
+        )
 
         df_agg = (
-            df_filtered.groupby(["lat", "lon", "label"]).size().reset_index(name="count")
+            df_filtered.groupby(["lat", "lon", "label"])
+            .size()
+            .reset_index(name="count")
         )
 
         # affichage de la carte avec pydeck
@@ -951,7 +957,12 @@ with tab_map:
                             opacity=0.6,
                             radius_pixels=70,
                             color_range=[
-                                [0, 99, 153, 120],  # rappel le 4ème nombres est l'intensité
+                                [
+                                    0,
+                                    99,
+                                    153,
+                                    120,
+                                ],  # rappel le 4ème nombres est l'intensité
                                 [0, 120, 170, 180],
                                 [0, 153, 180, 190],
                                 [0, 201, 167, 210],
@@ -997,7 +1008,9 @@ with tab_map:
                     geno_counts = (
                         df_report.groupby("genotype").size().reset_index(name="count")
                     )
-                    world_colors = [PALETTE[i % len(PALETTE)] for i in range(len(geno_counts))]
+                    world_colors = [
+                        PALETTE[i % len(PALETTE)] for i in range(len(geno_counts))
+                    ]
                     world_key = "_".join(geno_counts["genotype"].tolist())
 
                     col_bar, col_pie = st.columns([2, 1])
@@ -1021,7 +1034,9 @@ with tab_map:
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                         )
-                        st.plotly_chart(fig_bar, width="stretch", key=f"world_bar_{world_key}")
+                        st.plotly_chart(
+                            fig_bar, width="stretch", key=f"world_bar_{world_key}"
+                        )
 
                     with col_pie:
                         fig_pie = go.Figure(
@@ -1042,7 +1057,9 @@ with tab_map:
                             font=dict(color="white"),
                             showlegend=False,
                         )
-                        st.plotly_chart(fig_pie, width="stretch", key=f"world_pie_{world_key}")
+                        st.plotly_chart(
+                            fig_pie, width="stretch", key=f"world_pie_{world_key}"
+                        )
 
                 # onglet par continent
                 with tab_continent:
@@ -1054,12 +1071,15 @@ with tab_map:
 
                     all_genotypes = sorted(cont_geno["genotype"].unique())
                     geno_color = {
-                        g: PALETTE[i % len(PALETTE)] for i, g in enumerate(all_genotypes)
+                        g: PALETTE[i % len(PALETTE)]
+                        for i, g in enumerate(all_genotypes)
                     }
 
                     for continent in sorted(cont_geno["continent"].unique()):
                         df_c = cont_geno[cont_geno["continent"] == continent].copy()
-                        df_c["pct"] = (df_c["count"] / df_c["count"].sum() * 100).round(1)
+                        df_c["pct"] = (df_c["count"] / df_c["count"].sum() * 100).round(
+                            1
+                        )
                         st.subheader(continent)
                         col_chart, col_stats = st.columns([3, 1])
 
@@ -1084,7 +1104,9 @@ with tab_map:
                                 plot_bgcolor="rgba(0,0,0,0)",
                                 paper_bgcolor="rgba(0,0,0,0)",
                             )
-                            st.plotly_chart(fig_cont, width="stretch", key=f"fig_cont_{continent}")
+                            st.plotly_chart(
+                                fig_cont, width="stretch", key=f"fig_cont_{continent}"
+                            )
 
                         with col_stats:
                             st.dataframe(
@@ -1246,7 +1268,9 @@ with help_tab:
 
         _df_map_stats = build_map_dataframe()
         _df_map_stats = _df_map_stats[_df_map_stats["label"] != "Unknown"].copy()
-        _df_map_stats["country"] = _df_map_stats["label"].apply(lambda x: x.split(",")[-1].strip())
+        _df_map_stats["country"] = _df_map_stats["label"].apply(
+            lambda x: x.split(",")[-1].strip()
+        )
         country_counts = _df_map_stats["country"].value_counts().to_dict()
 
         # Statistique de bases
