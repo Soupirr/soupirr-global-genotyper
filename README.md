@@ -1,5 +1,11 @@
 # NDV Genotyper
 
+![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/streamlit-1.57.0-FF4B4B?logo=streamlit&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![GitHub release](https://img.shields.io/github/v/release/Soupirr/NDV-genotyper)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 A Streamlit web application for Newcastle Disease Virus F gene genotyping.
 
 ---
