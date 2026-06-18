@@ -2,6 +2,7 @@
 
 <img width="200" alt="icon" src="https://github.com/user-attachments/assets/d48fb844-fed7-4c78-ad1d-e1d721a50f13" />
 
+<br><br>
   
 ![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.57.0-FF4B4B?logo=streamlit&logoColor=white)
