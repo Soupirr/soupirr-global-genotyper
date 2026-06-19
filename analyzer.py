@@ -283,11 +283,14 @@ class CleavageSiteAnalyzer:
             "cleavage_region_found": False,
             "cleavage_nucleotides": None,
             "cleavage_protein": None,
-            "pathogenicity": None,
+            "pathogenicity": "Undetermined",
             "confidence": "Low",
-            "motif_type": None,
+            "motif_type": "No known motif found in cleavage region",
             "motif_category": None,
         }
+
+        result_plus_one = result.copy()
+        result_minus_one = result.copy()
 
         CLEAVAGE_START = 333
         CLEAVAGE_LENGTH = 24
@@ -295,21 +298,54 @@ class CleavageSiteAnalyzer:
 
         # Vérifie que la séquence est assez longue
         if len(sequence) < CLEAVAGE_START - WINDOW + CLEAVAGE_LENGTH:
-            return result
+            return result, result_plus_one, result_minus_one
 
         # Extrait la région autour du site de clivage avec la fenêtre de tolérance
         region_start = max(0, CLEAVAGE_START - WINDOW)
         region_end = min(len(sequence), CLEAVAGE_START + CLEAVAGE_LENGTH + WINDOW)
         cleavage_region_nuc = sequence[region_start:region_end]
 
-        # Traduit cette région en protéine
+        # Extraction des cadres de lecture +1 -1
+        region_start_plus_one = max(0, CLEAVAGE_START + 1 - WINDOW)
+        region_end_plus_one = min(
+            len(sequence), CLEAVAGE_START + 1 + CLEAVAGE_LENGTH + WINDOW
+        )
+        cleavage_region_nuc_plus_one = sequence[
+            region_start_plus_one:region_end_plus_one
+        ]
+
+        region_start_minus_one = max(0, CLEAVAGE_START - 1 - WINDOW)
+        region_end_minus_one = min(
+            len(sequence), CLEAVAGE_START - 1 + CLEAVAGE_LENGTH + WINDOW
+        )
+        cleavage_region_nuc_minus_one = sequence[
+            region_start_minus_one:region_end_minus_one
+        ]
+
+        # Traduit la région principale en protéine
         cleavage_region_prot = CleavageSiteAnalyzer.translate_to_protein(
             cleavage_region_nuc
+        )
+
+        # Traduit les régions +1 -1 en protéine
+        cleavage_region_prot_plus_one = CleavageSiteAnalyzer.translate_to_protein(
+            cleavage_region_nuc_plus_one
+        )
+        cleavage_region_prot_minus_one = CleavageSiteAnalyzer.translate_to_protein(
+            cleavage_region_nuc_minus_one
         )
 
         result["cleavage_region_found"] = True
         result["cleavage_nucleotides"] = cleavage_region_nuc
         result["cleavage_protein"] = cleavage_region_prot
+
+        result_plus_one["cleavage_region_found"] = True
+        result_plus_one["cleavage_nucleotides"] = cleavage_region_nuc_plus_one
+        result_plus_one["cleavage_protein"] = cleavage_region_prot_plus_one
+
+        result_minus_one["cleavage_region_found"] = True
+        result_minus_one["cleavage_nucleotides"] = cleavage_region_nuc_minus_one
+        result_minus_one["cleavage_protein"] = cleavage_region_prot_minus_one
 
         # Cherche d'abord les motifs virulents,
         for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
@@ -318,23 +354,55 @@ class CleavageSiteAnalyzer:
                 result["motif_type"] = motif
                 result["motif_category"] = category
                 result["confidence"] = "High"
-                return result
+                return result, result_plus_one, result_minus_one
 
-        # puis les avirulents
+        # virulent +1
+        for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
+            if motif in cleavage_region_prot_plus_one:
+                result_plus_one["pathogenicity"] = "Likely Virulent"
+                result_plus_one["motif_type"] = motif
+                result_plus_one["motif_category"] = category
+                result_plus_one["confidence"] = "High"
+                return result, result_plus_one, result_minus_one
+
+        # virulent -1
+        for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
+            if motif in cleavage_region_prot_minus_one:
+                result_minus_one["pathogenicity"] = "Likely Virulent"
+                result_minus_one["motif_type"] = motif
+                result_minus_one["motif_category"] = category
+                result_minus_one["confidence"] = "High"
+                return result, result_plus_one, result_minus_one
+
+        # puis les avirulents main
         for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
             if motif in cleavage_region_prot:
                 result["pathogenicity"] = "Likely Low-virulence"
                 result["motif_type"] = motif
                 result["motif_category"] = category
                 result["confidence"] = "High"
-                return result
+                return result, result_plus_one, result_minus_one
 
-        # Si rien n'est trouvé:
-        result["pathogenicity"] = "Undetermined"
-        result["motif_type"] = "No known motif found in cleavage region"
-        result["motif_category"] = None
-        result["confidence"] = "Low"
-        return result
+        # puis les avirulents +1
+        for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
+            if motif in cleavage_region_prot_plus_one:
+                result_plus_one["pathogenicity"] = "Likely Low-virulence"
+                result_plus_one["motif_type"] = motif
+                result_plus_one["motif_category"] = category
+                result_plus_one["confidence"] = "High"
+                return result, result_plus_one, result_minus_one
+
+        # puis les avirulents -1
+        for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
+            if motif in cleavage_region_prot_minus_one:
+                result_minus_one["pathogenicity"] = "Likely Low-virulence"
+                result_minus_one["motif_type"] = motif
+                result_minus_one["motif_category"] = category
+                result_minus_one["confidence"] = "High"
+                return result, result_plus_one, result_minus_one
+
+        # Si rien n'est trouvé, les valeurs par défaut du dict initial s'appliquent
+        return result, result_plus_one, result_minus_one
         # Retourne le résultat avec le motif trouvé, sa catégorie et la pathogénicité prédite
 
 
@@ -446,13 +514,17 @@ def analyze_newcastle_sequence(
     )
 
     # lancer l'analyse du site de cleavage
-    cleavage_analysis = CleavageSiteAnalyzer.analyze(input_sequence)
+    cleavage_main, cleavage_plus_one, cleavage_minus_one = CleavageSiteAnalyzer.analyze(
+        input_sequence
+    )
 
     return {
         "input_header": input_header,
         "sequence_length": len(input_sequence),
         "genotype_matches": genotype_matches,
-        "cleavage_analysis": cleavage_analysis,
+        "cleavage_main": cleavage_main,
+        "cleavage_plus_one": cleavage_plus_one,
+        "cleavage_minus_one": cleavage_minus_one,
         "error": None,
     }
 

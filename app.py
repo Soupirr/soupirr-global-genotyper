@@ -420,83 +420,270 @@ with tab_analyze:
 
                     st.subheader("Pathogenicity Analysis")
 
-                    # import les résultats de l'analyse
-                    cleavage = results["cleavage_analysis"]
+                    cadre_1, cadre_2, cadre_3 = st.tabs(
+                        [
+                            "Main Reading Frame",
+                            "Reading Frame +1",
+                            "Reading Frame -1",
+                        ]
+                    )
 
-                    if cleavage["cleavage_region_found"]:
-                        motif = (
-                            cleavage["motif_type"]
-                            if cleavage["motif_type"]
-                            and len(cleavage["motif_type"]) == 6
-                            else cleavage["cleavage_protein"][:8]
-                        )
-                        protein = cleavage["cleavage_protein"]
+                    with cadre_1:
+                        # import les résultats de l'analyse
+                        cleavage = results["cleavage_main"]
 
-                        col1, col2, col3 = st.columns([2, 1, 1])
-
-                        with col1:
-                            st.write("**Cleavage Region (protein):**")
-                            if motif and len(motif) == 6 and motif in protein:
-                                idx = protein.index(motif)
-                                before = protein[:idx]
-                                after = protein[idx + len(motif) :]
-                                color = (
-                                    "#FF4444"
-                                    if "Virulent" in cleavage["pathogenicity"]
-                                    else "#2ECC71"
-                                )
-                                st.markdown(
-                                    f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{motif}</span>{after}</div>",
-                                    unsafe_allow_html=True,
-                                )
-                            else:
-                                # si pas de motifs trouvés
-                                st.markdown(
-                                    f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein}</div>",
-                                    unsafe_allow_html=True,
-                                )
-                        with col2:
-                            st.write("**Motif Found:**")
-                            if (
+                        if cleavage["cleavage_region_found"]:
+                            motif = (
                                 cleavage["motif_type"]
+                                if cleavage["motif_type"]
                                 and len(cleavage["motif_type"]) == 6
-                            ):
-                                st.code(cleavage["motif_type"], language="text")
+                                else cleavage["cleavage_protein"][:8]
+                            )
+                            protein = cleavage["cleavage_protein"]
+
+                            col1, col2, col3 = st.columns([2, 1, 1])
+
+                            with col1:
+                                st.write("**Cleavage Region (protein):**")
+                                if motif and len(motif) == 6 and motif in protein:
+                                    idx = protein.index(motif)
+                                    before = protein[:idx]
+                                    after = protein[idx + len(motif) :]
+                                    color = (
+                                        "#FF4444"
+                                        if "Virulent" in cleavage["pathogenicity"]
+                                        else "#2ECC71"
+                                    )
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{motif}</span>{after}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                else:
+                                    # si pas de motifs trouvés
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                            with col2:
+                                st.write("**Motif Found:**")
+                                if (
+                                    cleavage["motif_type"]
+                                    and len(cleavage["motif_type"]) == 6
+                                ):
+                                    st.code(cleavage["motif_type"], language="text")
+                                else:
+                                    st.code("Not found", language="text")
+                            with col3:
+                                st.write("**Motif Category:**")
+                                st.code(
+                                    f"{cleavage['motif_category'] or 'Unknown'}",
+                                    language="text",
+                                )
+
+                            pathogenicity = cleavage["pathogenicity"]
+                            confidence_path = cleavage["confidence"]
+
+                            # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
+                            if "Likely Virulent" in pathogenicity:
+                                st.error(
+                                    f"Likely Virulent (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a virulent strain with polybasic cleavage site (≥3 basic residues at positions 113-116 + F at position 117)."
+                                )
+                            elif "Likely Low-virulence" in pathogenicity:
+                                st.success(
+                                    f"Likely Low-virulence (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a low-virulence strain with monobasic or L117 cleavage site."
+                                )
                             else:
-                                st.code("Not found", language="text")
-                        with col3:
-                            st.write("**Motif Category:**")
-                            st.code(
-                                f"{cleavage['motif_category'] or 'Unknown'}",
-                                language="text",
-                            )
-
-                        pathogenicity = cleavage["pathogenicity"]
-                        confidence_path = cleavage["confidence"]
-
-                        # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
-                        if "Likely Virulent" in pathogenicity:
-                            st.error(f"Likely Virulent (Confidence: {confidence_path})")
-                            st.write(
-                                "This sequence shows characteristics of a virulent strain with polybasic cleavage site (≥3 basic residues at positions 113-116 + F at position 117)."
-                            )
-                        elif "Likely Low-virulence" in pathogenicity:
-                            st.success(
-                                f"Likely Low-virulence (Confidence: {confidence_path})"
-                            )
-                            st.write(
-                                "This sequence shows characteristics of a low-virulence strain with monobasic or L117 cleavage site."
-                            )
+                                st.warning(
+                                    f"Undetermined (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "No known cleavage site motif was found in the expected region. "
+                                    "The sequence may be incomplete, contain too many indels, or represent an unusual strain."
+                                )
                         else:
-                            st.warning(f"Undetermined (Confidence: {confidence_path})")
-                            st.write(
-                                "No known cleavage site motif was found in the expected region. "
-                                "The sequence may be incomplete, contain too many indels, or represent an unusual strain."
+                            st.warning(
+                                "Could not analyze cleavage site. Sequence may be incomplete."
                             )
-                    else:
-                        st.warning(
-                            "Could not analyze cleavage site. Sequence may be incomplete."
-                        )
+
+                    with cadre_2:
+                        # import les résultats de l'analyse
+                        cleavage_plus_one = results["cleavage_plus_one"]
+
+                        if cleavage_plus_one["cleavage_region_found"]:
+                            motif = (
+                                cleavage_plus_one["motif_type"]
+                                if cleavage_plus_one["motif_type"]
+                                and len(cleavage_plus_one["motif_type"]) == 6
+                                else cleavage_plus_one["cleavage_protein"][:8]
+                            )
+                            protein_plus_one = cleavage_plus_one["cleavage_protein"]
+
+                            col1, col2, col3 = st.columns([2, 1, 1])
+
+                            with col1:
+                                st.write("**Cleavage Region (protein):**")
+                                if (
+                                    motif
+                                    and len(motif) == 6
+                                    and motif in protein_plus_one
+                                ):
+                                    idx = protein_plus_one.index(motif)
+                                    before = protein_plus_one[:idx]
+                                    after = protein_plus_one[idx + len(motif) :]
+                                    color = (
+                                        "#FF4444"
+                                        if "Virulent" in cleavage_plus_one["pathogenicity"]
+                                        else "#2ECC71"
+                                    )
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{motif}</span>{after}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                else:
+                                    # si pas de motifs trouvés
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein_plus_one}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                            with col2:
+                                st.write("**Motif Found:**")
+                                if (
+                                    cleavage_plus_one["motif_type"]
+                                    and len(cleavage_plus_one["motif_type"]) == 6
+                                ):
+                                    st.code(cleavage_plus_one["motif_type"], language="text")
+                                else:
+                                    st.code("Not found", language="text")
+                            with col3:
+                                st.write("**Motif Category:**")
+                                st.code(
+                                    f"{cleavage_plus_one['motif_category'] or 'Unknown'}",
+                                    language="text",
+                                )
+
+                            pathogenicity = cleavage_plus_one["pathogenicity"]
+                            confidence_path = cleavage_plus_one["confidence"]
+
+                            # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
+                            if "Likely Virulent" in pathogenicity:
+                                st.error(
+                                    f"Likely Virulent (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a virulent strain with polybasic cleavage site (≥3 basic residues at positions 113-116 + F at position 117)."
+                                )
+                            elif "Likely Low-virulence" in pathogenicity:
+                                st.success(
+                                    f"Likely Low-virulence (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a low-virulence strain with monobasic or L117 cleavage site."
+                                )
+                            else:
+                                st.warning(
+                                    f"Undetermined (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "No known cleavage site motif was found in the expected region. "
+                                    "The sequence may be incomplete, contain too many indels, or represent an unusual strain."
+                                )
+                        else:
+                            st.warning(
+                                "Could not analyze cleavage site. Sequence may be incomplete."
+                            )
+
+                    with cadre_3:
+                        # import les résultats de l'analyse
+                        cleavage_minus_one = results["cleavage_minus_one"]
+
+                        if cleavage_minus_one["cleavage_region_found"]:
+                            motif = (
+                                cleavage_minus_one["motif_type"]
+                                if cleavage_minus_one["motif_type"]
+                                and len(cleavage_minus_one["motif_type"]) == 6
+                                else cleavage_minus_one["cleavage_protein"][:8]
+                            )
+                            protein_minus_one = cleavage_minus_one["cleavage_protein"]
+
+                            col1, col2, col3 = st.columns([2, 1, 1])
+
+                            with col1:
+                                st.write("**Cleavage Region (protein):**")
+                                if (
+                                    motif
+                                    and len(motif) == 6
+                                    and motif in protein_minus_one
+                                ):
+                                    idx = protein_minus_one.index(motif)
+                                    before = protein_minus_one[:idx]
+                                    after = protein_minus_one[idx + len(motif) :]
+                                    color = (
+                                        "#FF4444"
+                                        if "Virulent" in cleavage_minus_one["pathogenicity"]
+                                        else "#2ECC71"
+                                    )
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{motif}</span>{after}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                else:
+                                    # si pas de motifs trouvés
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein_minus_one}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                            with col2:
+                                st.write("**Motif Found:**")
+                                if (
+                                    cleavage_minus_one["motif_type"]
+                                    and len(cleavage_minus_one["motif_type"]) == 6
+                                ):
+                                    st.code(cleavage_minus_one["motif_type"], language="text")
+                                else:
+                                    st.code("Not found", language="text")
+                            with col3:
+                                st.write("**Motif Category:**")
+                                st.code(
+                                    f"{cleavage_minus_one['motif_category'] or 'Unknown'}",
+                                    language="text",
+                                )
+
+                            pathogenicity = cleavage_minus_one["pathogenicity"]
+                            confidence_path = cleavage_minus_one["confidence"]
+
+                            # Ici on utilise error (et success) pour afficher la zone de texte en rouge ou vert (purement cosmétique)
+                            if "Likely Virulent" in pathogenicity:
+                                st.error(
+                                    f"Likely Virulent (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a virulent strain with polybasic cleavage site (≥3 basic residues at positions 113-116 + F at position 117)."
+                                )
+                            elif "Likely Low-virulence" in pathogenicity:
+                                st.success(
+                                    f"Likely Low-virulence (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "This sequence shows characteristics of a low-virulence strain with monobasic or L117 cleavage site."
+                                )
+                            else:
+                                st.warning(
+                                    f"Undetermined (Confidence: {confidence_path})"
+                                )
+                                st.write(
+                                    "No known cleavage site motif was found in the expected region. "
+                                    "The sequence may be incomplete, contain too many indels, or represent an unusual strain."
+                                )
+                        else:
+                            st.warning(
+                                "Could not analyze cleavage site. Sequence may be incomplete."
+                            )
 
             # Matrice de similitude
             if len(all_sequences) > 1:
