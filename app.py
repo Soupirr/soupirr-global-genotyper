@@ -30,6 +30,7 @@ if platform.system() == "Windows":
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), "data")
 SEQ_FOLDER = os.path.join(DATA_FOLDER, "sequences")
 LOCATION_FOLDER = os.path.join(DATA_FOLDER, "locations")
+PATHO_FOLDER = os.path.join(DATA_FOLDER, "pathogenicity")
 
 # palette importé depuis ColorBrewer (Spectral 11 + Set1/Dark2 extensions)
 # les couleurs pâles du centre Spectral (#fee08b, #ffffbf, #e6f598, #abdda4)
@@ -136,8 +137,6 @@ tab_analyze, tab_tree, tab_map, help_tab = st.tabs(
 # ============================================================================
 
 with tab_analyze:
-    st.header("Sequence Analyzer Tool")
-
     # Charge les datasets de référence / reset les dictionnaires
     @st.cache_resource
     def load_all_references():
@@ -159,6 +158,11 @@ with tab_analyze:
 
     references, files_count, total_count, load_errors = load_all_references()
 
+    st.header(
+        f"Sequence Analyzer Tool \u00a0\u00a0\u00a0({files_count} Databases Loaded)",
+        help="files can be found in '.../data/sequences/*'",
+    )
+
     if (
         not references or len(references) == 0
     ):  # Failsafe si il n'y a pas les fasta dans le dossier
@@ -172,21 +176,6 @@ with tab_analyze:
         3. Restart the app
         """)
         st.stop()
-
-    # Display dataset info
-    col1, col2, _ = st.columns([2, 2, 6])
-    with col1:
-        st.metric(
-            "Databases Loaded",
-            files_count,
-            help="files can be found in '.../data/sequences/*'",
-        )
-    with col2:
-        st.metric(
-            "Total Sequences",
-            len(references),
-            help="unique genotypes names can be found in '.../data/genotypes.txt'",
-        )
 
     st.divider()
 
@@ -211,6 +200,8 @@ with tab_analyze:
                 "Use **Hamming** for faster results."
             )
 
+        st.write("")
+
         # Scroll pour choisir le nombre de Matches à afficher
         top_n_matches = st.slider(
             "Number of Top Matches",
@@ -218,6 +209,14 @@ with tab_analyze:
             max_value=10,
             value=5,
             help="Show this many best-matching genotypes  (Default = 5)",
+        )
+
+        st.write("")
+
+        show_matrix = st.checkbox(
+            "Compute Similarity Matrix",
+            value=True,
+            help="This should be turned off when analysing more than ~20 sequences at once",
         )
 
     with col_content:
@@ -521,7 +520,7 @@ with tab_analyze:
                     )
 
             # Matrice de similitude
-            if len(all_sequences) > 1:
+            if len(all_sequences) > 1 and show_matrix:
                 st.divider()
                 st.subheader("Input Sequences Comparison Matrix")
 
@@ -847,12 +846,6 @@ with tab_tree:
                     width="stretch",
                     config={"scrollZoom": True, "displayModeBar": True},
                 )
-
-                if platform.system() == "Windows":
-                    winsound.PlaySound(
-                        "misc/notification.wav",
-                        winsound.SND_FILENAME | winsound.SND_ASYNC,
-                    )
 
 
 # ============================================================================
@@ -1248,15 +1241,16 @@ with tab_map:
 # ============================================================================
 
 with help_tab:
-    st.divider()
     st.markdown(
         "##### **If you encounter any issues feel free to report them [here](https://github.com/Soupirr/NDV-genotyper/issues).**"
     )
     st.divider()
 
-    info_tab, path_tab, stat_tab = st.tabs(
-        ["Informations", "Pathogenicity", "Statistics"]
-    )
+    (
+        stat_tab,
+        info_tab,
+        path_tab,
+    ) = st.tabs(["Statistics", "Informations", "Pathogenicity"])
 
     with info_tab:
         with open("QUICK_START.md", "r", encoding="utf-8") as f:
@@ -1288,6 +1282,9 @@ with help_tab:
         )
         HOST_NORMALIZE = dict(
             zip(_df_host_map["raw_host"].str.lower(), _df_host_map["normalized_host"])
+        )
+        df_patho = pd.read_csv(
+            os.path.join(PATHO_FOLDER, "NDV_F_class_I_and_II_2022_Pathogenicity.csv")
         )
 
         KNOWN_COUNTRIES = set(df_world["country"].str.lower()) | {
@@ -1569,3 +1566,96 @@ with help_tab:
         # affichage du dataframe si nécessaire
         with st.expander("View full coverage table"):
             st.dataframe(df_health, width="stretch", hide_index=True)
+
+        st.divider()
+
+        st.subheader("Genotypes Pathogenicity")
+
+        fig_gen_patho = go.Figure()
+        patho_counts = (
+            df_patho.groupby(["Best Genotype", "Pathogenicity"])
+            .size()
+            .reset_index(name="count")
+        )
+        for patho_type in patho_counts["Pathogenicity"].unique():
+            df_p = patho_counts[patho_counts["Pathogenicity"] == patho_type]
+            fig_gen_patho.add_trace(
+                go.Bar(
+                    name=patho_type,
+                    x=df_p["Best Genotype"],
+                    y=df_p["count"],
+                    hovertemplate="%{x}<br>%{y:.2f}%<br>%{fullData.name}<extra></extra>",
+                    marker_color={
+                        "Virulent": "#FC3C3C",
+                        "Low-virulence": "#2ECC71",
+                        "Undetermined": "#888888",
+                    }.get(patho_type, "#888888"),
+                )
+            )
+        fig_gen_patho.update_layout(
+            barmode="stack",
+            barnorm="percent",
+            legend=dict(yanchor="bottom", y=-0.5, xanchor="left", x=0.01),
+            xaxis_title="Genotypes",
+            yaxis_title="% Virulence",
+            height=350,
+            margin=dict(l=0, r=0, t=30, b=0),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            hoverlabel=dict(
+                bgcolor="#0c1a24",
+                font_color="white",
+                bordercolor="rgba(255,255,255,0.2)",
+            ),
+        )
+        st.plotly_chart(fig_gen_patho, width="stretch")
+
+        st.divider()
+
+        col_patho_1, col_patho_2 = st.columns([2, 1])
+
+        with col_patho_1:
+            st.subheader("Motifs Distribution")
+            motif_counts = (
+                df_patho.groupby(["Cleavage Motif", "Motif Class"])
+                .size()
+                .reset_index(name="Count")
+            )
+            motif_counts = (
+                motif_counts[motif_counts["Cleavage Motif"] != "N/A"]
+                .sort_values("Count", ascending=False)
+                .head(7)
+            )
+            st.dataframe(motif_counts, hide_index=True, width="stretch")
+
+        with col_patho_2:
+            st.subheader("Virulence Distribution")
+            vir_counts = df_patho["Pathogenicity"].value_counts()
+            fig_vir_pie = go.Figure(
+                go.Pie(
+                    labels=vir_counts.index,
+                    values=vir_counts.values,
+                    hole=0.45,
+                    textposition="inside",
+                    marker=dict(
+                        colors=[
+                            {
+                                "Virulent": "#FF4444",
+                                "Low-virulence": "#2ECC71",
+                                "Undetermined": "#888888",
+                            }.get(lll, "#888888")
+                            for lll in vir_counts.index
+                        ]
+                    ),
+                    textinfo="label+percent",
+                    textfont=dict(color="white"),
+                )
+            )
+            fig_vir_pie.update_layout(
+                height=280,
+                margin=dict(l=0, r=0, t=0, b=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white"),
+                showlegend=False,
+            )
+            st.plotly_chart(fig_vir_pie, width="stretch")
