@@ -16,7 +16,7 @@
 A Streamlit web/local application for Newcastle Disease Virus F gene genotyping.
 
 
-For more information on how to use the app and how to add sequences to the database, see **QUICK_START.md**.
+For more information on how to use the app and how to add sequences to the database, see [**QUICK_START.md**](https://github.com/Soupirr/NDV-genotyper/blob/main/QUICK_START.md).
 
 ---
 
