@@ -11,6 +11,7 @@ PATHO_FOLDER = os.path.join(DATA_FOLDER, "pathogenicity")
 HOSTS_FOLDER = os.path.join(DATA_FOLDER, "hosts")
 MISC_FOLDER = os.path.join(_ROOT, "misc")
 TOOLS_FOLDER = os.path.join(_ROOT, "tools")
+VALIDATION_FOLDER = os.path.join(DATA_FOLDER, "validation")
 
 # palette importé depuis ColorBrewer (Spectral 11 + Set1/Dark2 extensions)
 PALETTE = [
