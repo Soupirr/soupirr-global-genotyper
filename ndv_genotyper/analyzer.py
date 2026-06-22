@@ -22,7 +22,7 @@ def get_mafft_cmd():
     if system_mafft:
         return system_mafft
     else:  # Windows packaged
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         return os.path.join(base_dir, "tools", "mafft-win", "mafft.bat")
 
 
@@ -31,7 +31,7 @@ def get_fasttree_cmd():
     if system_fasttree:
         return system_fasttree
     else:  # Windows packaged
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         return os.path.join(base_dir, "tools", "FastTree.exe")
 
 
