@@ -577,7 +577,7 @@ def align_sequences_mafft(input_fasta_path, output_fasta_path):
     )
     with open(output_fasta_path, "w") as out:
         subprocess.run(
-            [get_mafft_cmd(), "--auto", input_fasta_path],
+            [get_mafft_cmd(), "--localpair", input_fasta_path],
             stdout=out,
             stderr=subprocess.PIPE,
             **win_flags,

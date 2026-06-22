@@ -2,12 +2,12 @@
 
 ---
 
-## ⚠️ IMPORTANT - Adding New Sequences to the Database
+## ⚠️ IMPORTANT - Adding New Sequences to the Reference Database
 
-Before adding any new sequences to the database, **every sequence header must strictly follow this format:**
+Before adding any new sequences to the reference database, **every sequence header must strictly follow this format:**
 
 ```
->NUMBER_GENOTYPE_INFORMATION
+>NUMBER_GENOTYPE_INFORMATION_YEAR
 ```
 
 **Example:**
@@ -19,12 +19,13 @@ Before adding any new sequences to the database, **every sequence header must st
 |---|---|---|
 | `NUMBER` | Unique sequence ID | `142` |
 | `GENOTYPE` | NDV genotype | `VII.1.1` |
-| `INFORMATION` | Accession, host, location, year | `MF100730.1_chicken_China_GD_2016` |
+| `INFORMATION` | Accession, host, location | `MF100730.1_chicken_China_GD_` |
+| `YEAR` | year | `2016` |
 
-**Fields must be separated by underscores `_`.** The genotype must always be the second field. Sequences that do not follow this format will not be correctly identified and may cause errors in the analysis. Year should be in the last position.
+**Fields must be separated by underscores `_`.** The genotype must always be the second field. Sequences that do not follow this format will not be correctly identified and may cause errors in futur analysis. Year should also be in the last position.
 
 A full list of the Gentoypes name can be found inside the "genotypes.txt" file.
-Also note that adding sequence will make analysis slower over time.
+Also note that adding too much sequences may make analysis slower over time.
 
 To add new sequences:
 1. Make sure your sequences follow the above format
@@ -54,7 +55,7 @@ In the left configuration panel, select one of two methods:
 
 **Step 2 - Choose the number of top matches**
 
-Use the slider to select how many top matching genotypes you want to see in the results (1 to 10, default 3).
+Use the slider to select how many top matching genotypes you want to see in the results (1 to 10, default 5).
 
 **Step 3 - Input your sequence**
 
@@ -95,25 +96,25 @@ A warning will appear if similarity is below 95% when using the Hamming method.
 
 | Result | Meaning |
 |---|---|
-| **Likely Virulent** | A known virulent cleavage motif (VFcs-1 to VFcs-8) was found |
-| **Likely Low-virulence** | A known avirulent cleavage motif (AFcs-1 to AFcs-10) was found |
+| **Virulent** | A known virulent cleavage motif (VFcs-1 to VFcs-8) was found |
+| **Low-virulence** | A known avirulent cleavage motif (AFcs-1 to AFcs-10) was found |
 | **Undetermined** | No known motif was found - sequence may be incomplete or unusual |
 
 > ⚠️ Pathogenicity prediction is based solely on the F protein cleavage site motif. This is a strong indicator but not the only criterion for virulence. Results should always be interpreted in the context of additional biological data.
 
-**Export** - at the bottom of the page, a summary table shows all analyzed sequences. You can download it as a CSV file with a timestamp in the filename.
+**Export** - at the bottom of the page, a summary table shows all analyzed sequences. You can download it as a CSV file.
 
 ---
 
 ### 3. Phylogenetic Tree Tab
 
-This tab automatically builds a small phylogenetic tree showing your query sequence in context of its 20 closest neighbours from the reference database.
+This tab automatically builds a small phylogenetic tree showing your query sequence in context of its (by default) 20 closest neighbours from the reference database.
 
 The tree is built using:
 - **MAFFT** for multiple sequence alignment
 - **FastTree** for tree construction (GTR model, SH-like bootstrap support)
 
-Your query sequence is highlighted in **green**. Bootstrap values ≥ 70% are shown on internal nodes.
+Your query sequence is highlighted in **green**. Bootstrap values ≥ 50% are shown on internal nodes.
 
 The tree is only generated after running an analysis in the Sequence Analysis tab.
 
@@ -130,7 +131,7 @@ Shows the geographic distribution of NDV genotypes from the reference database. 
 - Format: FASTA (`.fasta`, `.fas`, `.fa`, `.txt`)
 - Sequence type: NDV F gene nucleotide sequence
 - Recommended length: ~1662 bp (full F gene)
-- Shorter sequences are accepted but may give less reliable results
+- Shorter or longer sequences are accepted but may give less reliable results
 - Sequences with insertions/deletions are handled better by the Pairwise method
 
 ---

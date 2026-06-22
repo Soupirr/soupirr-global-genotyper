@@ -640,7 +640,10 @@ def tree_to_plotly(tree):
     def get_x(clade, x=0):
         clade.x = x
         for c in clade.clades:
-            get_x(c, x + 1)
+            if st.session_state.get("tree_mode") == "Phylogram":
+                get_x(c, x + (c.branch_length or 0))
+            else:
+                get_x(c, x + 1)
 
     # calcul des positions
     get_y(tree.root)
@@ -707,11 +710,18 @@ with tab_tree:
                 step=5,
                 help="Number of closest reference sequences used to build the phylogenetic tree (default: 20)",
             )
+            tree_mode = st.radio(
+                "Tree Mode",
+                ["Cladogram", "Phylogram"],
+                horizontal=True,
+                help="Cladogram: uniform branch lengths. Phylogram: real evolutionary distances.",
+            )
         with col_button_tree:
             st.write("")  # petit espace pour aligner verticalement avec le slider
             if st.button("Create Trees", type="primary"):
                 st.session_state["load_tree"] = True
                 st.session_state["n_neighbours"] = n_neighbours
+                st.session_state["tree_mode"] = tree_mode
                 st.rerun()
 
     else:
