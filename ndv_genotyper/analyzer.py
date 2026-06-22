@@ -584,7 +584,7 @@ def align_sequences_mafft(input_fasta_path, output_fasta_path):
         )
 
 
-# trouve les 20 voisins les plus proche de notre input
+# trouve les voisins les plus proche de notre input (par default: 20)
 def find_closest_neighbours(query_sequence, reference_sequences, n=20):
     similarities = []
 
@@ -616,9 +616,13 @@ def write_temp_fasta(query_header, query_sequence, neighbours, output_path):
 
 
 # Color mapping (generated)
-CLASS_I = {"1.1", "1.1.1", "1.1.2", "1.2", "I.1.1", "I.1.2.1", "I.1.2.2", "I.2"}
+CLASS_I = {"1.1", "1.1.1", "1.1.2", "1.2"}
 
 CLASS_II_V = {
+    "I.1.1": "#198748",
+    "I.1.2.1": "#14713c",
+    "I.1.2.2": "#085228",
+    "I.2": "#043418",
     "II": "#1a9850",
     "III": "#52b788",
     "IV": "#74c69d",
