@@ -43,6 +43,16 @@ def render():
     with stat_tab:
         st.header("Database Statistics")
 
+        if "data_loaded" not in st.session_state:
+            st.info(
+                "Building the statistics scans every sequence in the database. "
+                "Click to load."
+            )
+            if st.button("Load Statistics", type="primary"):
+                st.session_state["data_loaded"] = True
+                st.rerun()
+            return
+
         db_references, db_files_count, db_total_count, _ = (
             analyze_tab.load_all_references()
         )

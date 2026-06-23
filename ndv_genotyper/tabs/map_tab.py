@@ -120,15 +120,15 @@ def render():
     st.header("Global Distribution Map")
     st.markdown("Explore the geographic distribution of NDV genotypes worldwide.")
 
-    if "map_loaded" not in st.session_state:
+    if "data_loaded" not in st.session_state:
         st.info(
             "The map database contains thousands of sequences and may take a few seconds to load."
         )
         if st.button("Load Map", type="primary"):
-            st.session_state["map_loaded"] = True
+            st.session_state["data_loaded"] = True
             st.rerun()
 
-    if "map_loaded" in st.session_state:
+    if "data_loaded" in st.session_state:
         df_map = build_map_dataframe()
 
         # Nettoyer le DataFrame

@@ -1,4 +1,4 @@
-"""Shared paths and palette."""
+"""Shared paths, palette and CSS."""
 
 import os
 
