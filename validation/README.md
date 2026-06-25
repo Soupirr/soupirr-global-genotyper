@@ -24,6 +24,8 @@ Additionally, internal duplicates within the test set itself were removed.
 
 ### Final composition
 
+| Property | Value |
+| --- | --- |
 | Total sequences | 151 |
 | Leakage (identical to any reference) | 0 |
 | Internal duplicates | 0 |
