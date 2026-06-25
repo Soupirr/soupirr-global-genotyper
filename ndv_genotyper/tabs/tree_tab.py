@@ -182,6 +182,8 @@ def draw_tree(tree, title, multi_query=False):
         ],
         dragmode="pan",
     )
+    # stash the figure so the report can embed it (identical to what's shown)
+    st.session_state.setdefault("report_tree_figs", {})[title] = fig
     st.plotly_chart(
         fig,
         width="stretch",

@@ -14,6 +14,7 @@ from ndv_genotyper.analyzer import (
     SequenceSimilarity,
 )
 from ndv_genotyper.config import SEQ_FOLDER
+from ndv_genotyper import report
 
 if platform.system() == "Windows":
     import winsound
@@ -120,6 +121,8 @@ def render():
             st.session_state.pop("load_tree", None)
             st.session_state.pop("n_neighbours", None)
             st.session_state.pop("combined_tree", None)
+            st.session_state.pop("report_tree_figs", None)
+            st.session_state.pop("report_html", None)
 
         with st.form("analyze_form", border=False):
             input_tab1, input_tab2 = st.tabs(["Paste FASTA", "Upload File"])
@@ -162,6 +165,8 @@ def render():
             st.session_state.pop("load_tree", None)
             st.session_state.pop("n_neighbours", None)
             st.session_state.pop("combined_tree", None)
+            st.session_state.pop("report_tree_figs", None)
+            st.session_state.pop("report_html", None)
             if not input_fasta or input_fasta.strip() == "":
                 st.error("Please provide a sequence to analyze")
             elif not input_fasta.strip().startswith(">"):
@@ -493,3 +498,29 @@ def render():
 
         export_df = pd.DataFrame(export_rows)
         st.dataframe(export_df, width="stretch", hide_index=True)
+
+        # --- Full HTML report ---
+        st.divider()
+        st.subheader("Export Report")
+        tree_figs = st.session_state.get("report_tree_figs", {})
+        matrix_fig = fig_matrix if (len(all_sequences) > 1 and show_matrix) else None
+        if not tree_figs:
+            st.caption(
+                "Tip: build trees in the Phylogenetic Tree tab first to include them in the report."
+            )
+        if st.button("Generate Report", type="primary"):
+            st.session_state["report_html"] = report.build_report_html(
+                all_results=all_results,
+                export_df=export_df,
+                method=method,
+                elapsed_time=elapsed_time,
+                matrix_fig=matrix_fig,
+                tree_figs=tree_figs,
+            )
+        if "report_html" in st.session_state:
+            st.download_button(
+                "Download Report (HTML)",
+                data=st.session_state["report_html"],
+                file_name=f"NDV_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html",
+                mime="text/html",
+            )
