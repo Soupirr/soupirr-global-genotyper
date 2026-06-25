@@ -24,8 +24,6 @@ Additionally, internal duplicates within the test set itself were removed.
 
 ### Final composition
 
-| Property | Value |
-|---|---|
 | Total sequences | 151 |
 | Leakage (identical to any reference) | 0 |
 | Internal duplicates | 0 |
@@ -43,7 +41,6 @@ Accuracy was measured at three levels of the NDV nested nomenclature:
 |---|---|
 | **Exact** | Predicted sub-genotype matches label exactly (e.g. `VII.1.1 == VII.1.1`) |
 | **Top genotype** | Correct at the top level (e.g. any `VII.*` counted as `VII`) |
-| **Genotype** | Wrong genotype but right Class |
 | **Wrong** | fully wrong |
 
 ---
@@ -53,8 +50,7 @@ Accuracy was measured at three levels of the NDV nested nomenclature:
 | Metric | Value |
 |---|---|
 | Exact (sub-genotype) accuracy | **97.4%** |
-| Top genotype accuracy | > 97.4% |
-| Class accuracy | 100.0% |
+| Top genotype accuracy | 100.0% |
 | Macro accuracy | **92.9%** |
 | Sequences evaluated | 151 |
 
@@ -63,6 +59,13 @@ Accuracy was measured at three levels of the NDV nested nomenclature:
 ### Misclassifications
 
 The 4 misclassifications were **"Genotype"-level** errors: the top-level genotype was correct but the sub-lineage differed. No "Wrong"-class errors were observed.
+
+| Header | Real Genotype | Predicted Genotype | 
+| --- | --- | --- |
+| KF767468.1 | V | V.2 |
+| KF767469.1 | V | V.2 |
+| OR253530.1 | I.1.2.1 | I.2 | 
+| OR253549.1 | I.2 | I.1.2.1 |
 
 ---
 
