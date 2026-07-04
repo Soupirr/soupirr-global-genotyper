@@ -62,6 +62,7 @@ def build_report_html(
     export_df,
     method,
     elapsed_time,
+    entry_name=None,
     matrix_fig=None,
     tree_figs=None,
 ):
@@ -78,12 +79,15 @@ def build_report_html(
     p.append(f"<style>{_CSS}</style></head><body>")
 
     # --- header ---
-    p.append("<h1>NDV Genotyper — Analysis Report</h1>")
+    p.append("<h1>Soupirr's Genotyper Analysis Report</h1>")
     p.append(
         f"<p class='meta'>Generated {datetime.now():%Y-%m-%d %H:%M} &middot; "
         f"Method: {_html.escape(str(method)).title()} &middot; "
         f"{len(all_results)} sequence(s) &middot; {elapsed_time:.2f}s</p>"
     )
+
+    if entry_name:
+        p.append(f"<p class='meta'>Reference dataset: <strong>{_html.escape(entry_name)}</strong></p>")
 
     # --- full analysis details table ---
     p.append("<h2>Full Analysis Details</h2>")

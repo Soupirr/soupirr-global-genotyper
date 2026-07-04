@@ -7,7 +7,6 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FOLDER = os.path.join(_ROOT, "data")
 SEQ_FOLDER = os.path.join(DATA_FOLDER, "sequences")
 LOCATION_FOLDER = os.path.join(DATA_FOLDER, "locations")
-PATHO_FOLDER = os.path.join(DATA_FOLDER, "pathogenicity")
 HOSTS_FOLDER = os.path.join(DATA_FOLDER, "hosts")
 MISC_FOLDER = os.path.join(_ROOT, "misc")
 TOOLS_FOLDER = os.path.join(_ROOT, "tools")
@@ -36,6 +35,15 @@ PALETTE = [
     "#cab2d6",
 ]
 
+# Palette de couleur sans conotation sémantique pour les stats
+PATHO_PALETTE = [
+    "#A855F7",  # violet
+    "#F59E0B",  # amber
+    "#06B6D4",  # cyan
+    "#EC4899",  # rose
+    "#84CC16",  # lime
+]
+
 CUSTOM_CSS = """
     <style>
     h1, h2, h3 {
@@ -46,7 +54,7 @@ CUSTOM_CSS = """
         -webkit-text-fill-color: transparent;
         filter: drop-shadow(0 0 20px rgba(0, 201, 167, 0.2));
     }
-    header { visibility: hidden; }
+    [data-testid="stAppDeployButton"] { display: none !important; }
     section[data-testid="stMain"] {
         background: radial-gradient(ellipse at top, #0c1a24 0%, #060d14 70%);
     }
@@ -76,4 +84,5 @@ CUSTOM_CSS = """
     [data-testid="stSelectboxVirtualDropdownEmpty"] {
         display: none !important;
     }
+    [data-testid="stStatusWidget"] { display: none !important; }
 """

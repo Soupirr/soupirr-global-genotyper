@@ -1,42 +1,70 @@
-# NDV Sequence Analyzer - Quick Start Guide
+# Sequence Analyzer Toolbox - Quick Start Guide
 
 ---
 
-## ⚠️ IMPORTANT - Adding New Sequences to the Reference Database
+## Getting Started — Selecting an Entry
 
-Before adding any new sequences to the reference database, **every sequence header must strictly follow this format:**
+On the left sidebar, select an **entry** from the dropdown. Each entry is a reference dataset for a specific pathogen. If no entry exists yet, you need to add one first.
+
+### Adding a New Entry
+
+Use the **"Add new references datasets"** expander in the sidebar:
+
+1. Enter a name for the entry (e.g. `Avian Influenza H5N1`)
+2. Upload one or more reference FASTA files, directly as exported from **NCBI Virus** — the app automatically converts NCBI headers to its internal format, drops duplicate sequences and sequences missing a genotype, and shows a migration report (kept / dropped counts) after import
+3. Optionally configure pathogenicity analysis:
+   - **bp before the virulence motif area** — 0-indexed nucleotide position where the cleavage/virulence site starts. The app scans a fixed ±29-codon window around this position to tolerate indels.
+   - **Upload a motif file** — CSV with columns `motif,label,type` (e.g. `RRQKRF,VFcs-1,virulent`). The `type` column can contain any category name you define — there is no limit on the number of categories.
+4. Click **Add to the registry**
+
+The entry folder will be created automatically under `data/sequences/`.
+
+### Optional Files Per Entry
+
+You can enrich an entry by placing additional files in its folder:
+
+| File | Effect |
+|---|---|
+| `{entry_name}_motifs.csv` | Enables pathogenicity analysis |
+| `{entry_name}_pathogenicity.csv` | Pre-computed pathogenicity stats (auto-generated via the Stats tab) |
+| Any `.md` file | Adds a documentation tab in the Help — Statistics section |
+
+---
+
+## Sequence Header Format
+
+Every reference sequence header must strictly follow this format, fields separated by pipes `|`:
 
 ```
->NUMBER_GENOTYPE_INFORMATION_YEAR
+>VIRUS|ACCESSION|GENOTYPE|HOST|COUNTRY|REGION|YEAR
 ```
 
 **Example:**
 ```
->142_VII.1.1_MF100730.1_chicken_China_GD_390_2016
+>NDV|MH169357.1|VII.1.1|Chicken|Iran|?|2020
 ```
 
 | Field | Description | Example |
 |---|---|---|
-| `NUMBER` | Unique sequence ID | `142` |
-| `GENOTYPE` | NDV genotype | `VII.1.1` |
-| `INFORMATION` | Accession, host, location | `MF100730.1_chicken_China_GD_` |
-| `YEAR` | year | `2016` |
+| `VIRUS` | Virus/species name | `NDV` |
+| `ACCESSION` | GenBank accession (version suffix stripped) | `MH169357.1` |
+| `GENOTYPE` | Genotype, clade, or serotype identifier | `VII.1.1` |
+| `HOST` | Host species | `Chicken` |
+| `COUNTRY` | Country of isolation | `Iran` |
+| `REGION` | State/province/region, or `?` if unknown or same as country | `?` |
+| `YEAR` | Isolation year | `2020` |
 
-**Fields must be separated by underscores `_`.** The genotype must always be the second field. Sequences that do not follow this format will not be correctly identified and may cause errors in futur analysis. Year should also be in the last position.
-
-A full list of the Gentoypes name can be found inside the "genotypes.txt" file.
-Also note that adding too much sequences may make analysis slower over time.
-
-To add new sequences:
-1. Make sure your sequences follow the above format
-2. Place your `.fas` file inside the `data/sequences/` folder
-3. Restart the app
+If you upload sequences straight from an NCBI Virus export, you don't need to format headers by hand — the app's built-in migration step (see above) converts NCBI's own export format into this one automatically. If you're building a reference FASTA by hand, the genotype must always be the 3rd field and the year the last field; sequences that don't follow this format are skipped rather than mis-parsed.
 
 ---
 
 ## What This App Does
 
-The NDV Sequence Analyzer is a bioinformatics tool designed to identify the genotype and predict the pathogenicity of Newcastle Disease Virus (NDV) F gene sequences. It compares your input sequence against a curated reference database of 2944 sequences spanning 53 sub-genotypes.
+The Sequence Analyzer Toolbox is a bioinformatics tool for identifying genotypes and predicting pathogenicity from nucleotide sequences. It compares input sequences against a curated reference database and, when configured, analyzes a defined cleavage or virulence site region.
+
+The tool supports any pathogen for which you can provide:
+- A reference FASTA database with correctly formatted headers
+- Optionally, a cleavage site position and a motif classification file
 
 ---
 
@@ -44,135 +72,92 @@ The NDV Sequence Analyzer is a bioinformatics tool designed to identify the geno
 
 ### 1. Sequence Analysis Tab
 
-This is the main tab of the app. It allows you to identify the genotype and pathogenicity of one or multiple NDV F gene sequences.
-
 **Step 1 - Choose your similarity method**
 
-In the left configuration panel, select one of two methods:
-
-- **Hamming (fast)** - compares sequences position by position. Very fast but requires sequences of similar length. Results below 95% similarity may not be reliable due to insertions/deletions.
-- **Pairwise Alignment (accurate)** - performs a global pairwise alignment before comparing. Handles insertions and deletions correctly. Recommended for sequences that may differ in length from the reference. Takes approximately 30 seconds per sequence.
+- **Hamming (fast)** — compares sequences position by position. Very fast but requires sequences of similar length. Results below 95% similarity may not be reliable when insertions/deletions are present.
+- **Pairwise Alignment (accurate)** — performs a global alignment before comparing. Handles insertions and deletions correctly. Takes approximately 30 seconds per sequence.
 
 **Step 2 - Choose the number of top matches**
 
-Use the slider to select how many top matching genotypes you want to see in the results (1 to 10, default 5).
+Use the slider to select how many top matching genotypes to display (1 to 10, default 5).
 
 **Step 3 - Input your sequence**
 
-You have two options:
-- **Paste FASTA** - paste one or multiple sequences directly in FASTA format
-- **Upload File** - upload a `.fasta`, `.fas`, `.fa`, or `.txt` file
+- **Paste FASTA** — paste one or multiple sequences in FASTA format
+- **Upload File** — upload a `.fasta`, `.fas`, `.fa`, or `.txt` file
 
-Your input must be in FASTA format:
-```
->sequence_name
-ATGGGCTCCAGACCT...
-```
-
-Multiple sequences are supported - each sequence will be analyzed individually and results displayed in separate tabs.
+Multiple sequences are supported — each will be analyzed individually and results displayed in separate tabs.
 
 **Step 4 - Analyze**
 
-Click **Analyze Sequences** to start the analysis. A progress bar will show the status for each sequence.
+Click **Analyze Sequences**. A progress bar will show the status for each sequence.
 
 ---
 
 ### 2. Results
 
-Results are displayed in individual tabs for each sequence analyzed.
+**Sequence Information** — header and length of your input sequence.
 
-**Sequence Information** - header and length of your input sequence.
-
-**Genotype Identification** - shows:
-- Detected class (Class I or Class II)
-- Best matching genotype
-- Average similarity percentage
+**Genotype Identification** — shows:
+- Best matching genotype and average similarity score
 - Number of reference sequences for that genotype
-- Best individual match score and sequence name
+- Best individual match score
 
-A warning will appear if similarity is below 95% when using the Hamming method.
+A warning appears if similarity is below 95% when using the Hamming method.
 
-**Pathogenicity Analysis** - analyzes the F protein cleavage site region (positions ~333–357 bp) using a ±15 nucleotide window to account for insertions/deletions. Motifs are classified according to Dimitrov et al. 2019:
+**Pathogenicity Analysis** — analyzes the configured cleavage/virulence site region using a ±30 nucleotide window to account for insertions/deletions. Results are based on the motif file associated with the entry. The analysis is run across three reading frames (Main, +1, -1).
 
 | Result | Meaning |
 |---|---|
-| **Virulent** | A known virulent cleavage motif (VFcs-1 to VFcs-8) was found |
-| **Low-virulence** | A known avirulent cleavage motif (AFcs-1 to AFcs-10) was found |
-| **Undetermined** | No known motif was found - sequence may be incomplete or unusual |
+| **Configured type** (e.g. virulent) | A motif matching this category was found in the cleavage region |
+| **Undetermined** | No known motif was found — sequence may be incomplete or unusual |
 
-> ⚠️ Pathogenicity prediction is based solely on the F protein cleavage site motif. This is a strong indicator but not the only criterion for virulence. Results should always be interpreted in the context of additional biological data.
+> ⚠️ Pathogenicity prediction is based on cleavage site motif matching only. Results should always be interpreted alongside additional biological data.
 
-**Export** - at the bottom of the page, a summary table shows all analyzed sequences. You can download it as a CSV file.
+**Export** — a summary table at the bottom shows all analyzed sequences and can be downloaded as CSV.
 
 ---
 
 ### 3. Phylogenetic Tree Tab
 
-This tab automatically builds a small phylogenetic tree showing your query sequence in context of its (by default) 20 closest neighbours from the reference database.
+Builds a phylogenetic tree placing your query sequence among its closest neighbours from the reference database. Configure before building:
 
-The tree is built using:
-- **MAFFT** for multiple sequence alignment
-- **FastTree** for tree construction (GTR model, SH-like bootstrap support)
+- **Tree type** — *Per-query* (one tree per analyzed sequence) or *Combined* (all queries in a single tree)
+- **Tree Mode** — *Cladogram* (uniform branch lengths) or *Phylogram* (real evolutionary distances)
+- **Tree Method** — *FastTree* (fast, approximate ML) or *IQ-TREE2* (full ML with ModelFinder + ultrafast bootstrap — slower, publication-quality)
 
-Your query sequence is highlighted in **green**. Bootstrap values ≥ 50% are shown on internal nodes.
-
-The tree is only generated after running an analysis in the Sequence Analysis tab.
+MAFFT is used for alignment in both cases. Your query sequence is highlighted in colour. Bootstrap support values are shown on internal nodes. Each tree can be downloaded in Newick format. The tree is only generated after running an analysis in the Sequence Analysis tab.
 
 ---
 
-### 4. Map Tab
+### 4. Help — Statistics Tab
 
-Shows the geographic distribution of NDV genotypes from the reference database. You can filter by genotype to explore where specific strains have been reported.
+**Statistics** — database overview: sequences per genotype, temporal distribution, host distribution, geographic distribution, and coverage health per genotype.
 
----
+**Map** — geographic distribution of reference sequences, nested as a sub-tab here (shares the same "Load Statistics" click, so it loads at the same time). Filter by genotype to explore where specific strains have been reported. Location is parsed from the sequence header.
 
-## Input Requirements
+**Genotypes Pathogenicity** — shows pathogenicity statistics across all reference sequences. If no pre-computed data exists yet, click **Generate Pathogenicity Data** to automatically analyze all reference sequences and save the results. This only requires a motif file to be configured for the entry.
 
-- Format: FASTA (`.fasta`, `.fas`, `.fa`, `.txt`)
-- Sequence type: NDV F gene nucleotide sequence
-- Recommended length: ~1662 bp (full F gene)
-- Shorter or longer sequences are accepted but may give less reliable results
-- Sequences with insertions/deletions are handled better by the Pairwise method
+**Pathogenicity Documentation** *(only shown if a `.md` file is present in the entry folder)* — entry-specific documentation such as motif criteria, references, or dataset description.
 
 ---
 
-## References
+### 5. Precision Validation Tab *(hidden — visit the app with `?dev=1` at the end of the URL)*
 
-- Dimitrov et al. (2019) - Updated unified phylogenetic classification system and revised
-nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917
-
-- Wang et al. (2017) - Comprehensive analysis of amino acid sequence diversity at the F protein cleavage site of Newcastle disease virus in fusogenic activity, https://doi.org/10.1371/journal.pone.0183923.
-
-- FastTree: Price et al. (2009/2010), PLOS ONE
-
-- MAFFT: Katoh et al., multiple versions
+Sanity-checks the genotyper's own accuracy against the currently selected entry's reference dataset: it repeatedly holds out a random subset of reference sequences, removes them from the matching pool, and tests them against what's left. Because a single holdout draw can be lucky or unlucky, it reports the **mean accuracy across all runs** (± standard deviation) rather than a one-off score, along with a pooled confusion matrix and the most frequent genotype confusions. Configure the number of runs, the holdout size per run, and the similarity method before running.
 
 ---
 
-## Newcastle Disease Virus Dataset Citation
+## Tools Used
 
-Dimitrov, K.M., Abolnik, C., Afonso, C.L., Albina, E., Bahl, J., Berg, M., Briand, F.X., Brown, I.H., Choi, K.S., Chvala, I., Diel, D.G., Durr, P.A., Ferreira, H.L., Fusaro, A., Gil, P., Goujgoulova, G.V., Grund, C., Hicks, J.T., Joannis, T.M., Kim Torchetti, M., Kolosov, S., Lambrecht, B., Lewis, N.S., Liu, H., Liu, H., McCullough, S., Miller, P.J., Monne, I., Muller, C.P., Munir, M., Reischak, D., Sabra, M., Samal, S.K., Servan de Almeida, R., Shittu, I., Snoeck, C.J., Suarez, D.L., Van Borm, S., Wang, Z., Wong, F.Y.K., 2019. Updated unified phylogenetic classification system and revised nomenclature for Newcastle disease virus. *Infect. Genet. Evol.*, 103917.
-https://doi.org/10.1016/j.meegid.2019.103917
-
-## Datasets Used in This Tool
-
-### Class I Dataset
-- **Filename:** NDV_F_class_I_619_May_09_2022.fas
-- **Contains:** 619 sequences from Class I genotypes
-- **Source:** NDV Consortium GitHub
-- **URL:** https://github.com/NDVconsortium/NDV_Sequence_Datasets
-
-### Class II Dataset
-- **Filename:** NDV_F_class_II_2157_May_09_2022.fas
-- **Contains:** 2157 sequences from Class II genotypes (I-XXI)
-- **Source:** NDV Consortium GitHub
-- **URL:** https://github.com/NDVconsortium/NDV_Sequence_Datasets
-
+- **MAFFT**: Katoh et al. — multiple sequence alignment
+- **FastTree**: Price et al. (2009/2010), PLOS ONE — approximate maximum-likelihood trees
+- **IQ-TREE2**: Minh et al. (2020), MBE — full maximum-likelihood trees with model selection and ultrafast bootstrap
 
 ---
 
-**Last Updated:** June 17, 2026
+**Last Updated:** July 3, 2026
 
 **Source:** https://github.com/Soupirr/NDV-genotyper
 
-*NDV Sequence Analyzer - developed as part of a bioinformatics internship project*
+*Sequence Analyzer Toolbox — developed as part of a bioinformatics internship project*

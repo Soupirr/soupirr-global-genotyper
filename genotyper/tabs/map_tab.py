@@ -5,8 +5,9 @@ import streamlit as st
 import pandas as pd
 import pydeck as pdk
 import plotly.graph_objects as go
-from ndv_genotyper.config import LOCATION_FOLDER, SEQ_FOLDER, PALETTE
+from genotyper.config import LOCATION_FOLDER, PALETTE
 
+_FASTA_EXTS = {".fasta", ".fas", ".fa", ".txt"}
 # ============================================================================
 
 
@@ -21,10 +22,13 @@ def load_locations_database():
 df_china, df_us, df_world, df_russia = load_locations_database()
 
 df_continent = pd.read_csv(os.path.join(LOCATION_FOLDER, "continent_map.csv"))
-CONTINENT_MAP = dict(zip(df_continent["country"], df_continent["continent"]))
+CONTINENT_MAP = {
+    k.replace("_", " "): v
+    for k, v in zip(df_continent["country"], df_continent["continent"])
+}
 
 CENTROIDS = {
-    "USA": (37.09, -95.71),
+    "United States": (37.09, -95.71),
     "China": (35.86, 104.19),
     "Russia": (61.52, 105.31),
 }
@@ -32,74 +36,63 @@ CENTROIDS = {
 
 # fonction qui retourne la lat, lon et les labels
 def parse_header_location(header):
-    parts = header.split("_")
-    padded = "_" + "_".join(parts) + "_"  # pour chercher _XX_ proprement
-
-    # Détection du pays
-    country = None
-    if "_USA_" in padded:
-        country = "USA"
-    elif "_China_" in padded:
-        country = "China"
-    elif "_Russia_" in padded:
-        country = "Russia"
-    else:
-        # Cherche dans la colonne country du CSV monde
-        for _, row in df_world.iterrows():
-            if f"_{row['country']}_" in padded:
-                return row["lat"], row["lon"], row["country"]
+    parts = header.split("|")
+    if len(parts) < 7:
         return None, None, "Unknown"
 
-    # Détection de la région
-    if country == "USA":
-        # abréviation (_PA_, _NY_...)
-        for _, row in df_us.iterrows():
-            if f"_{row['abbreviation_us']}_" in padded:
-                return row["lat"], row["lon"], f"{row['state']}, USA"
-        # nom complet (_New_York_...)
-        for _, row in df_us.iterrows():
-            state_fmt = row["state"]  # déjà avec _ dans le CSV ex: New_York
-            if f"_{state_fmt}_" in padded:
-                return row["lat"], row["lon"], f"{row['state']}, USA"
-        # Fallback
-        return CENTROIDS["USA"][0], CENTROIDS["USA"][1], "USA"
+    country = parts[4].replace("_", " ")
+    region = parts[5].replace("_", " ") if parts[5] != "?" else None
+
+    if country in ("UNKNOWN", "?", ""):
+        return None, None, "Unknown"
+
+    if country == "United States":
+        if region:
+            for _, row in df_us.iterrows():
+                if row["state"].lower() == region.lower():
+                    return row["lat"], row["lon"], f"{region}, United States"
+        return (
+            CENTROIDS["United States"][0],
+            CENTROIDS["United States"][1],
+            "United States",
+        )
 
     if country == "China":
-        # abréviation (_AH_, _BJ_...)
-        for _, row in df_china.iterrows():
-            if f"_{row['abbreviation_cn']}_" in padded:
-                return row["lat"], row["lon"], f"{row['province']}, China"
-        # nom complet (_Shanghai_...)
-        for _, row in df_china.iterrows():
-            if f"_{row['province']}_" in padded:
-                return row["lat"], row["lon"], f"{row['province']}, China"
-        # Fallback
+        if region:
+            for _, row in df_china.iterrows():
+                if row["province"].lower() == region.lower():
+                    return row["lat"], row["lon"], f"{region}, China"
         return CENTROIDS["China"][0], CENTROIDS["China"][1], "China"
 
     if country == "Russia":
-        # Nom de région (_Novosibirsk_, _FarEast_, _Amur_region_...)
-        for _, row in df_russia.iterrows():
-            if f"_{row['region_ru']}_" in padded:
-                return row["lat"], row["lon"], f"{row['region_ru']}, Russia"
-        # Fallback
+        if region:
+            for _, row in df_russia.iterrows():
+                if row["region_ru"].replace("_", " ").lower() == region.lower():
+                    return row["lat"], row["lon"], f"{region}, Russia"
         return CENTROIDS["Russia"][0], CENTROIDS["Russia"][1], "Russia"
+
+    for _, row in df_world.iterrows():
+        if row["country"].replace("_", " ").lower() == country.lower():
+            return row["lat"], row["lon"], country
+
+    return None, None, "Unknown"
 
 
 # ============================================================================
 
 
 @st.cache_resource
-def build_map_dataframe():
+def build_map_dataframe(path):
     rows = []
-    for file in os.listdir(SEQ_FOLDER):
-        if file.endswith(".fas"):
-            path = os.path.join(SEQ_FOLDER, file)
-            with open(path, "r") as f:
+    for file in os.listdir(path):
+        if os.path.splitext(file)[1] in _FASTA_EXTS:
+            file_path = os.path.join(path, file)
+            with open(file_path, "r") as f:
                 for line in f:
                     if line.startswith(">"):
                         header = line.strip().lstrip(">")
-                        parts = header.split("_")  # récuperation des génotypes
-                        genotype = parts[1] if len(parts) > 1 else "Unknown"
+                        parts = header.split("|")  # récuperation des génotypes
+                        genotype = parts[2] if len(parts) > 2 else "Unknown"
                         lat, lon, label = parse_header_location(header)
                         rows.append(
                             {
@@ -116,7 +109,7 @@ def build_map_dataframe():
 # ============================================================================
 
 
-def render():
+def render(path):
     st.header("Global Distribution Map")
     st.markdown("Explore the geographic distribution of NDV genotypes worldwide.")
 
@@ -129,7 +122,7 @@ def render():
             st.rerun()
 
     if "data_loaded" in st.session_state:
-        df_map = build_map_dataframe()
+        df_map = build_map_dataframe(path)
 
         # Nettoyer le DataFrame
         df_map_clean = df_map[

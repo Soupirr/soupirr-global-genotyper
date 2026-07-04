@@ -34,7 +34,7 @@ a = Analysis(
         [
             # Application source (Streamlit reads app.py as a text file at runtime)
             ('app.py',                      '.'),
-            ('ndv_genotyper',                'ndv_genotyper'),
+            ('genotyper',                'genotyper'),
             # Data files required by the app (QUICK_START.md & PATHOGENICITY_CRITERIA.md ship inside misc/)
             ('data',        'data'),
             ('misc',       'misc'),

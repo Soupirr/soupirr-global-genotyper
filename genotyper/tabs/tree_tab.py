@@ -1,18 +1,22 @@
 """Phylogenetic Tree tab."""
 
 import os
+import time
 import streamlit as st
 import plotly.graph_objects as go
-from ndv_genotyper.analyzer import (
+from genotyper.analyzer import (
     find_closest_neighbours,
     write_temp_fasta,
     align_sequences_mafft,
     build_tree_fasttree,
+    build_tree_iqtree2,
+    tree_to_newick,
     get_color,
     clean_sequence,
 )
-from ndv_genotyper.config import DATA_FOLDER
-from ndv_genotyper.config import PALETTE
+from genotyper.config import DATA_FOLDER, PALETTE
+from genotyper import report
+from genotyper.tabs.analyze_tab import load_all_references
 
 # ============================================================================
 
@@ -189,12 +193,20 @@ def draw_tree(tree, title, multi_query=False):
         width="stretch",
         config={"scrollZoom": True, "displayModeBar": True},
     )
+    st.download_button(
+        "Download tree (Newick)",
+        data=tree_to_newick(tree),
+        file_name=f"{title[:50].replace(' ', '_')}.nwk",
+        mime="text/plain",
+        key=f"newick_dl_{title}",
+    )
 
 
 # ============================================================================
 
 
-def render(references):
+def render(path):
+    references, _, _, _ = load_all_references(path)
     st.header("Phylogenetic Tree")
 
     if "all_sequences" not in st.session_state or "all_results" not in st.session_state:
@@ -204,7 +216,7 @@ def render(references):
         with col_slider_tree:
             tree_type = st.radio(
                 "Tree type",
-                ["Per-query", "Combined"],
+                ["Combined", "Per-query"],
                 horizontal=True,
                 help="Per-query: one tree each. Combined: all queries in a single tree.",
             )
@@ -224,12 +236,24 @@ def render(references):
                 horizontal=True,
                 help="Cladogram: uniform branch lengths. Phylogram: real evolutionary distances.",
             )
+
+            tree_method = st.radio(
+                "Tree Method",
+                ["FastTree", "IQ-TREE2"],
+                horizontal=True,
+                help="FastTree: fast, approximate. IQ-TREE2: full ML + ModelFinder + bootstrap, slower for publication.",
+            )
+            if tree_method == "IQ-TREE2":
+                st.caption(
+                    "IQ-TREE2 is significantly slower than FastTree, especially in Per-query mode with a large number of sequences."
+                )
         with col_button_tree:
             st.write("")  # petit espace pour aligner verticalement avec le slider
             if st.button("Create Trees", type="primary"):
                 st.session_state["load_tree"] = True
                 st.session_state["tree_type"] = tree_type
                 st.session_state["tree_mode"] = tree_mode
+                st.session_state["tree_method"] = tree_method
                 if tree_type == "Combined":
                     st.session_state["n_per_query"] = n_per_query
                 else:
@@ -262,7 +286,12 @@ def render(references):
                             f.write(f">{h}\n{clean_sequence(s)}\n")
 
                     align_sequences_mafft(tmp_fasta, tmp_aligned)
-                    st.session_state["combined_tree"] = build_tree_fasttree(tmp_aligned)
+                    tree_builder = (
+                        build_tree_iqtree2
+                        if st.session_state.get("tree_method") == "IQ-TREE2"
+                        else build_tree_fasttree
+                    )
+                    st.session_state["combined_tree"] = tree_builder(tmp_aligned)
 
             tree = st.session_state["combined_tree"]
             if tree is None:
@@ -291,7 +320,12 @@ def render(references):
                         # alignes ces séquences avec mafft
                         align_sequences_mafft(tmp_fasta, tmp_aligned)
                         # les sauvegardes dans session_state
-                        tree = build_tree_fasttree(tmp_aligned)
+                        tree_builder = (
+                            build_tree_iqtree2
+                            if st.session_state.get("tree_method") == "IQ-TREE2"
+                            else build_tree_fasttree
+                        )
+                        tree = tree_builder(tmp_aligned)
                         if tree is None:
                             st.warning(
                                 f"Could not build tree for {header[:40]} — try re-running the analysis."
@@ -310,3 +344,34 @@ def render(references):
                         continue
                     tree = st.session_state["trees"][header]
                     draw_tree(tree, header)
+
+    # --- Export Report ---
+    if "report_export_df" in st.session_state:
+        st.divider()
+        st.subheader("Export Report")
+        tree_figs = st.session_state.get("report_tree_figs", {})
+        matrix_fig = st.session_state.get("report_matrix_fig")
+        all_results = st.session_state.get("all_results", [])
+        method = st.session_state.get("method", "hamming")
+        elapsed_time = st.session_state.get("elapsed_time", 0)
+        export_df = st.session_state["report_export_df"]
+
+        if not tree_figs:
+            st.caption("Tip: build trees above first to include them in the report.")
+        if st.button("Generate Report", type="primary"):
+            st.session_state["report_html"] = report.build_report_html(
+                all_results=all_results,
+                export_df=export_df,
+                method=method,
+                elapsed_time=elapsed_time,
+                matrix_fig=matrix_fig,
+                tree_figs=tree_figs,
+                entry_name=os.path.basename(path),
+            )
+        if "report_html" in st.session_state:
+            st.download_button(
+                "Download Report (HTML)",
+                data=st.session_state["report_html"],
+                file_name=f"genotyper_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html",
+                mime="text/html",
+            )

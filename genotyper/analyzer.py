@@ -1,7 +1,4 @@
-"""
-Newcastle Disease Virus F Gene Genotyper
-Core analysis module
-"""
+"""Core analysis module"""
 
 from typing import Dict, List, Tuple
 import subprocess
@@ -10,11 +7,13 @@ import io
 import os
 import platform
 import shutil
+import zlib
+from genotyper.config import PALETTE
 
 # ============================================================================
 # ============================================================================
 
-# Fonctions qui permet d'importer les package FastTree et Mafft sur Linux peut import ou ils sont
+# Fonctions qui permet d'importer les package FastTree, Mafft et IQ-TREE2 sur Linux peut import ou ils sont
 
 
 def get_mafft_cmd():
@@ -33,6 +32,17 @@ def get_fasttree_cmd():
     else:  # Windows packaged
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         return os.path.join(base_dir, "tools", "FastTree.exe")
+
+
+def get_iqtree_cmd():
+    system_iqtree = shutil.which("iqtree2") or shutil.which("iqtree")
+    if system_iqtree:
+        return system_iqtree
+    else:  # Windows packaged
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(
+            base_dir, "tools", "iqtree-2.4.0-Windows", "bin", "iqtree2.exe"
+        )
 
 
 # ============================================================================
@@ -235,32 +245,6 @@ class CleavageSiteAnalyzer:
     }
     # https://gist.github.com/juanfal/09d7fb53bd367742127e17284b9c47bf
 
-    # Known virulent motifs (VFcs) from Yanhong Wang et al. 2017
-    VIRULENT_MOTIFS = {
-        "RRQKRF": "VFcs-1",
-        "RRQRRF": "VFcs-2",
-        "KRQKRF": "VFcs-3",
-        "GRQKRF": "VFcs-4",
-        "RRKKRF": "VFcs-5",
-        "RRRKRF": "VFcs-6",
-        "KRKKRF": "VFcs-7",
-        "RRRRRF": "VFcs-8",
-    }
-
-    # Known avirulent motifs (AFcs) from Yanhong Wang et al. 2017
-    AVIRULENT_MOTIFS = {
-        "GRQGRL": "AFcs-1",
-        "GKQGRL": "AFcs-2",
-        "RRQGRL": "AFcs-3",
-        "ERQERL": "AFcs-4",
-        "RRQGRF": "AFcs-5",  # avirulent même si F
-        "ERQGRL": "AFcs-6",
-        "RKQGRL": "AFcs-7",
-        "EKQGRL": "AFcs-8",
-        "EQQERL": "AFcs-9",
-        "RRQRRL": "AFcs-10",
-    }
-
     # Traduit une séquence ADN en protéine codon par codon (3 nucléotides à la fois).
     # Si le codon contient un N (nucléotide ambigu) ou est incomplet, il retourne X.
     @staticmethod
@@ -277,14 +261,20 @@ class CleavageSiteAnalyzer:
         return "".join(protein)
 
     @staticmethod
-    def analyze(sequence: str) -> Dict:
+    def analyze(
+        sequence: str,
+        cleavage_start: int,
+        motifs_by_type: dict = None,
+    ):
+        motifs_by_type = motifs_by_type or {}
+
+        WINDOW = 29 * 3  # ± tolerance for indels
 
         result = {
             "cleavage_region_found": False,
             "cleavage_nucleotides": None,
             "cleavage_protein": None,
             "pathogenicity": "Undetermined",
-            "confidence": "Low",
             "motif_type": "No known motif found in cleavage region",
             "motif_category": None,
         }
@@ -292,32 +282,22 @@ class CleavageSiteAnalyzer:
         result_plus_one = result.copy()
         result_minus_one = result.copy()
 
-        CLEAVAGE_START = 333
-        CLEAVAGE_LENGTH = 24
-        WINDOW = 30  # ± tolerance for indels
-
         # Vérifie que la séquence est assez longue
-        if len(sequence) < CLEAVAGE_START - WINDOW + CLEAVAGE_LENGTH:
+        if len(sequence) < cleavage_start - WINDOW:
             return result, result_plus_one, result_minus_one
 
         # Extrait la région autour du site de clivage avec la fenêtre de tolérance
-        region_start = max(0, CLEAVAGE_START - WINDOW)
-        region_end = min(len(sequence), CLEAVAGE_START + CLEAVAGE_LENGTH + WINDOW)
+        region_start = max(0, cleavage_start - WINDOW)
+        region_end = min(len(sequence), cleavage_start + WINDOW)
         cleavage_region_nuc = sequence[region_start:region_end]
-
         # Extraction des cadres de lecture +1 -1
-        region_start_plus_one = max(0, CLEAVAGE_START + 1 - WINDOW)
-        region_end_plus_one = min(
-            len(sequence), CLEAVAGE_START + 1 + CLEAVAGE_LENGTH + WINDOW
-        )
+        region_start_plus_one = max(0, cleavage_start + 1 - WINDOW)
+        region_end_plus_one = min(len(sequence), cleavage_start + 1 + WINDOW)
         cleavage_region_nuc_plus_one = sequence[
             region_start_plus_one:region_end_plus_one
         ]
-
-        region_start_minus_one = max(0, CLEAVAGE_START - 1 - WINDOW)
-        region_end_minus_one = min(
-            len(sequence), CLEAVAGE_START - 1 + CLEAVAGE_LENGTH + WINDOW
-        )
+        region_start_minus_one = max(0, cleavage_start - 1 - WINDOW)
+        region_end_minus_one = min(len(sequence), cleavage_start - 1 + WINDOW)
         cleavage_region_nuc_minus_one = sequence[
             region_start_minus_one:region_end_minus_one
         ]
@@ -326,8 +306,6 @@ class CleavageSiteAnalyzer:
         cleavage_region_prot = CleavageSiteAnalyzer.translate_to_protein(
             cleavage_region_nuc
         )
-
-        # Traduit les régions +1 -1 en protéine
         cleavage_region_prot_plus_one = CleavageSiteAnalyzer.translate_to_protein(
             cleavage_region_nuc_plus_one
         )
@@ -347,63 +325,20 @@ class CleavageSiteAnalyzer:
         result_minus_one["cleavage_nucleotides"] = cleavage_region_nuc_minus_one
         result_minus_one["cleavage_protein"] = cleavage_region_prot_minus_one
 
-        # Cherche d'abord les motifs virulents,
-        for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot:
-                result["pathogenicity"] = "Virulent"
-                result["motif_type"] = motif
-                result["motif_category"] = category
-                result["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
+        for type_name, motifs in motifs_by_type.items():
+            for frames, result_dict in [
+                (cleavage_region_prot, result),
+                (cleavage_region_prot_plus_one, result_plus_one),
+                (cleavage_region_prot_minus_one, result_minus_one),
+            ]:
+                for motif, label in motifs.items():
+                    if motif in frames:
+                        result_dict["pathogenicity"] = type_name
+                        result_dict["motif_type"] = motif
+                        result_dict["motif_category"] = label
+                        return result, result_plus_one, result_minus_one
 
-        # virulent +1
-        for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot_plus_one:
-                result_plus_one["pathogenicity"] = "Virulent"
-                result_plus_one["motif_type"] = motif
-                result_plus_one["motif_category"] = category
-                result_plus_one["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
-
-        # virulent -1
-        for motif, category in CleavageSiteAnalyzer.VIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot_minus_one:
-                result_minus_one["pathogenicity"] = "Virulent"
-                result_minus_one["motif_type"] = motif
-                result_minus_one["motif_category"] = category
-                result_minus_one["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
-
-        # puis les avirulents main
-        for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot:
-                result["pathogenicity"] = "Low-virulence"
-                result["motif_type"] = motif
-                result["motif_category"] = category
-                result["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
-
-        # puis les avirulents +1
-        for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot_plus_one:
-                result_plus_one["pathogenicity"] = "Low-virulence"
-                result_plus_one["motif_type"] = motif
-                result_plus_one["motif_category"] = category
-                result_plus_one["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
-
-        # puis les avirulents -1
-        for motif, category in CleavageSiteAnalyzer.AVIRULENT_MOTIFS.items():
-            if motif in cleavage_region_prot_minus_one:
-                result_minus_one["pathogenicity"] = "Low-virulence"
-                result_minus_one["motif_type"] = motif
-                result_minus_one["motif_category"] = category
-                result_minus_one["confidence"] = "High"
-                return result, result_plus_one, result_minus_one
-
-        # Si rien n'est trouvé, les valeurs par défaut du dict initial s'appliquent
         return result, result_plus_one, result_minus_one
-        # Retourne le résultat avec le motif trouvé, sa catégorie et la pathogénicité prédite
 
 
 # Class qui comparer une séquence inconnue contre toute la base de données
@@ -412,23 +347,6 @@ class GenotypeIdentifier:
     def __init__(self, references: Dict[str, str]):
         # Initialise la classe avec le dictionnaire de séquences de référence
         self.references = references
-        self.genotype_map = self._build_genotype_map()
-
-    def _build_genotype_map(self) -> Dict[str, List[str]]:
-        genotype_map = {}
-
-        for header in self.references.keys():
-            # Parcourt tous les headers de la base de données et les regroupe par génotype.
-            # Exemple: 36_I.1.1_I_a_AF217084_chicken_Australia_Queensland_V_4_1966
-            parts = header.split("_")
-            if len(parts) >= 2:
-                genotype = parts[1]  # e.g., "I.1.1", "II", "VII.1.1"
-
-                if genotype not in genotype_map:
-                    genotype_map[genotype] = []
-                genotype_map[genotype].append(header)
-
-        return genotype_map
 
     def identify(self, input_sequence: str, method="hamming", top_n=3) -> List[Tuple]:
         results = []
@@ -447,8 +365,8 @@ class GenotypeIdentifier:
             similarity = similarity_func(input_sequence, ref_sequence)
 
             # Header : ID_GENOTYPE_...
-            parts = header.split("_")
-            genotype = parts[1] if len(parts) >= 2 else "Unknown"
+            parts = header.split("|")
+            genotype = parts[2] if len(parts) >= 3 else "Unknown"
 
             if genotype not in genotype_scores:
                 genotype_scores[genotype] = []
@@ -494,7 +412,8 @@ def analyze_newcastle_sequence(
     input_fasta: str,
     reference_sequences: Dict[str, str],
     top_matches: int = 3,
-    similarity_method: str = "hamming",  # utilisation de Hamming par default
+    similarity_method: str = "hamming",
+    pathogenicity_config: dict = None,  # utilisation de Hamming par default
 ) -> Dict:
 
     # Parse input
@@ -513,28 +432,38 @@ def analyze_newcastle_sequence(
         input_sequence, method=similarity_method, top_n=top_matches
     )
 
-    # lancer l'analyse du site de cleavage
-    cleavage_main, cleavage_plus_one, cleavage_minus_one = CleavageSiteAnalyzer.analyze(
-        input_sequence
-    )
+    cfg = pathogenicity_config or {}
+    pathogenicity_configured = "cleavage_start" in cfg
+
+    if pathogenicity_configured:
+        cleavage_main, cleavage_plus_one, cleavage_minus_one = (
+            CleavageSiteAnalyzer.analyze(
+                input_sequence,
+                cleavage_start=cfg["cleavage_start"],
+                motifs_by_type=cfg.get("motifs_by_type"),
+            )
+        )
+    else:
+        _empty = {
+            "cleavage_region_found": False,
+            "cleavage_nucleotides": None,
+            "cleavage_protein": None,
+            "pathogenicity": "Not configured",
+            "motif_type": None,
+            "motif_category": None,
+        }
+        cleavage_main = cleavage_plus_one = cleavage_minus_one = _empty.copy()
 
     return {
         "input_header": input_header,
         "sequence_length": len(input_sequence),
         "genotype_matches": genotype_matches,
+        "pathogenicity_configured": pathogenicity_configured,
         "cleavage_main": cleavage_main,
         "cleavage_plus_one": cleavage_plus_one,
         "cleavage_minus_one": cleavage_minus_one,
         "error": None,
     }
-
-
-# fonction qui permet d'obtenir la Class d'un génotype en fonction de son nom
-def get_class(genotype):
-    if genotype.startswith("1"):
-        return "Class I"
-    else:
-        return "Class II"
 
 
 # fonction qui convertit le tuple brut retourné par GenotypeIdentifier.identify() en dictionnaire
@@ -546,6 +475,12 @@ def unpack_top_match(top_match):
         "best_header": top_match[3],
         "best_score": top_match[4],
     }
+
+
+def tree_to_newick(tree) -> str:
+    buf = io.StringIO()
+    Phylo.write(tree, buf, "newick")
+    return buf.getvalue()
 
 
 # fonction de construction de l'arbre avec FastTree
@@ -565,6 +500,44 @@ def build_tree_fasttree(aln_file):
     if not newick_str or not newick_str.strip():
         return None
     tree = Phylo.read(io.StringIO(newick_str), "newick")
+    tree.root_at_midpoint()  # ultra important ça me pose des problèmes depuis 1 mois
+    return tree
+
+
+# fonction de construction de l'arbre avec IQ-TREE2 (ModelFinder + ultrafast bootstrap)
+# même principe que pour fasttree
+def build_tree_iqtree2(aln_file):
+    win_flags = (
+        {"creationflags": subprocess.CREATE_NO_WINDOW}
+        if platform.system() == "Windows"
+        else {}
+    )
+    subprocess.run(
+        [
+            get_iqtree_cmd(),
+            "-s",
+            aln_file,
+            "-m",
+            "MFP",
+            "-bb",
+            "1000",
+            "-nt",
+            "AUTO",
+            "-redo",  # nécessaire parce que le pipeline "Per-query" réutilise le même chemin de fichier temporaire (tmp_aligned.fasta) à chaque itération de la boucle — sans -redo, IQ-TREE2 refuse de tourner une 2e fois sur un fichier de sortie déjà existant
+        ],
+        capture_output=True,
+        text=True,
+        **win_flags,
+    )
+    treefile = aln_file + ".treefile"
+    if not os.path.exists(treefile):
+        return None
+    tree = Phylo.read(treefile, "newick")
+    tree.root_at_midpoint()  # pareil que pour fasttree
+    # IQ-TREE2 exprime le bootstrap ultrafast en 0-100, FastTree en 0-1 (voir tree_to_plotly) — on normalise ici
+    for clade in tree.find_clades():
+        if clade.confidence is not None:
+            clade.confidence = clade.confidence / 100
     return tree
 
 
@@ -616,102 +589,14 @@ def write_temp_fasta(query_header, query_sequence, neighbours, output_path):
 
 
 # Color mapping (generated)
-CLASS_I = {"1.1", "1.1.1", "1.1.2", "1.2"}
-
-CLASS_II_V = {
-    "I.1.1": "#198748",
-    "I.1.2.1": "#14713c",
-    "I.1.2.2": "#085228",
-    "I.2": "#043418",
-    "II": "#1a9850",
-    "III": "#52b788",
-    "IV": "#74c69d",
-    "V": "#95d5b2",
-    "V.1": "#b7e4c7",
-    "V.2": "#d8f3dc",
-    "V.3": "#40916c",
-}
-
-CLASS_VI = {
-    "VI.1": "#e85d04",
-    "VI.2.1": "#f48c06",
-    "VI.2.1.1.1": "#faa307",
-    "VI.2.1.1.2.1": "#ffba08",
-    "VI.2.1.1.2.2": "#ffd60a",
-    "VI.2.1.1.2.2.": "#ffdd00",
-    "VI.2.1.2": "#f46036",
-    "VI.2.2.1": "#e2711d",
-    "VI.2.2.2": "#cc5803",
-}
-
-CLASS_VII = {
-    "VII": "#d00000",
-    "VII.1": "#e85252",
-    "VII.1.1": "#ff6b6b",
-    "VII.1.2": "#ff8fa3",
-    "VII.2": "#a4133c",
-}
-
-CLASS_VIII_XIV = {
-    "VIII": "#7b2d8b",
-    "IX": "#9b4dca",
-    "X": "#b57bee",
-    "X.1": "#c77dff",
-    "X.2": "#d4a5ff",
-    "XI": "#6a0572",
-    "XII": "#8338ec",
-    "XII.1": "#9d4edd",
-    "XII.2": "#c77dff",
-    "XIII.1": "#5a189a",
-    "XIII.1.1": "#6d23b6",
-    "XIII.1.2": "#7b2d8b",
-    "XIII.2": "#480ca8",
-    "XIII.2.1": "#3a0ca3",
-    "XIII.2.2": "#3c096c",
-    "XIV": "#e0aaff",
-    "XIV.1": "#c8b6ff",
-    "XIV.2": "#b8c0ff",
-}
-
-CLASS_XV_PLUS = {
-    "XVI": "#f72585",
-    "XVII": "#ff4d6d",
-    "XVIII.1": "#ff758f",
-    "XVIII.2": "#ff85a1",
-    "XIX": "#ffb3c1",
-    "XX": "#fb6f92",
-    "XXI": "#ff0a54",
-    "XXI.1.1": "#ff477e",
-    "XXI.1.2": "#ff5c8a",
-    "XXI.2": "#c9184a",
-}
-
-
-# Fonction qui assigne chaque class à une couleur différente
 def get_color(name):
     if not name:
         return "#888888"
-    parts = name.split("_")
-    if len(parts) < 2:
+    parts = name.split("|")
+    if len(parts) < 3:
         return "#888888"
-    genotype = parts[1]
-
-    if genotype in CLASS_I:
-        return "#4A90D9"
-    elif genotype.startswith("UNCL"):
+    genotype = parts[2]
+    if genotype in ("?", "UNKNOWN", "") or genotype.startswith("UNCL"):
         return "#888888"
-    elif genotype in CLASS_II_V:
-        return CLASS_II_V[genotype]
-    elif genotype in CLASS_VI:
-        return CLASS_VI[genotype]
-    elif genotype in CLASS_VII:
-        return CLASS_VII[genotype]
-    elif genotype in CLASS_VIII_XIV:
-        return CLASS_VIII_XIV[genotype]
-    elif genotype in CLASS_XV_PLUS:
-        return CLASS_XV_PLUS[genotype]
-    else:
-        return "#888888"
-
-
-# ============================================================================
+    idx = zlib.crc32(genotype.encode()) % len(PALETTE)
+    return PALETTE[idx]

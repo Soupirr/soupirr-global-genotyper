@@ -11,12 +11,13 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 </div>
 
-# NDV Genotyper
+# Soupirr's Genotyper
 
-A Streamlit web/local application for Newcastle Disease Virus F gene genotyping.
+A Streamlit web/local application for identifying pathogen genotypes and predicting pathogenicity from nucleotide sequences.
 
+The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA — no code changes.
 
-For more information on how to use the app and how to add sequences to the database, see [**QUICK_START.md**](https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md).
+For more information on how to use the app and how to add new entries, see [**QUICK_START.md**](https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md).
 
 ---
 
@@ -35,7 +36,7 @@ Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe`.
 Python 3.9+ is required. Install system dependencies:
 
 ```bash
-sudo apt install python3 python3-pip mafft fasttree
+sudo apt install python3 python3-pip mafft fasttree iqtree
 ```
 
 Install Python dependencies:
@@ -56,12 +57,13 @@ The app will open in your browser at `http://localhost:8501`.
 
 ## Build the Windows executable
 
-The Windows executable requires the MAFFT and FastTree Windows binaries placed in a `tools/` folder (not tracked by git).
+The Windows executable requires the MAFFT, FastTree, and IQ-TREE2 Windows binaries placed in a `tools/` folder (not tracked by git).
 
 1. Download [MAFFT for Windows](https://mafft.cbrc.jp/alignment/software/windows.html) and extract it to `tools/mafft-win/`
 2. Download [FastTree](http://www.microbesonline.org/fasttree/) (`FastTree.exe`) and place it in `tools/`
-3. Install PyInstaller: `pip install pyinstaller`
-4. Run:
+3. Download [IQ-TREE2](https://github.com/iqtree/iqtree2/releases) for Windows and extract it to `tools/` (the app expects `tools/iqtree-<version>-Windows/bin/iqtree2.exe` — update the version folder name in `genotyper/analyzer.py::get_iqtree_cmd()` if it doesn't match)
+4. Install PyInstaller: `pip install pyinstaller`
+5. Run:
 
 ```bash
 pyinstaller NDVGenotyper.spec
@@ -73,14 +75,15 @@ Output is in `dist/NDVGenotyper/`. Zip that folder to distribute.
 
 ## References
 
+Tools used for alignment and tree construction:
+
 - **MAFFT** - Katoh K, Standley DM. *MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability.* Molecular Biology and Evolution, 30(4):772–780, 2013. https://doi.org/10.1093/molbev/mst010
 
 - **FastTree** - Price MN, Dehal PS, Arkin AP. *FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments.* PLOS ONE, 5(3):e9490, 2010. https://doi.org/10.1371/journal.pone.0009490
 
-- **Dimitrov et al. (2019)** - Updated unified phylogenetic classification system and revised
-nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917
+- **IQ-TREE2** - Minh BQ, Schmidt HA, Chernomor O, et al. *IQ-TREE 2: New Models and Efficient Methods for Phylogenetic Inference in the Genomic Era.* Molecular Biology and Evolution, 37(5):1530–1534, 2020. https://doi.org/10.1093/molbev/msaa015
 
-- **Wang et al. (2017)** - Comprehensive analysis of amino acid sequence diversity at the F protein cleavage site of Newcastle disease virus in fusogenic activity, https://doi.org/10.1371/journal.pone.0183923.
+Pathogen-specific literature (genotype nomenclature, cleavage site criteria, etc.) is documented per-entry — see the `.md` file shipped alongside each reference dataset, shown in the app's Statistics tab for that entry.
 
 ## Gallery
 
