@@ -72,7 +72,7 @@ def build_report_html(
     p = [
         "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>",
         "<meta name='viewport' content='width=device-width, initial-scale=1'>",
-        "<title>NDV Genotyper Report</title>",
+        "<title>Genotyper Report</title>",
     ]
     if has_figs:
         p.append(f"<script>{get_plotlyjs()}</script>")
@@ -87,7 +87,9 @@ def build_report_html(
     )
 
     if entry_name:
-        p.append(f"<p class='meta'>Reference dataset: <strong>{_html.escape(entry_name)}</strong></p>")
+        p.append(
+            f"<p class='meta'>Reference dataset: <strong>{_html.escape(entry_name)}</strong></p>"
+        )
 
     # --- full analysis details table ---
     p.append("<h2>Full Analysis Details</h2>")
@@ -113,7 +115,7 @@ def build_report_html(
 
     p.append(
         "<p class='meta' style='margin-top:40px;'>Pathogenicity predictions are "
-        "motif-based (Wang et al., 2017) and indicative only — validate by assay "
+        "motif-based (Wang et al., 2017) and indicative only - validate by assay "
         "before any clinical or regulatory conclusion.</p>"
     )
     p.append("</body></html>")

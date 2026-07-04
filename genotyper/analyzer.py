@@ -408,7 +408,7 @@ class GenotypeIdentifier:
 # identifie le génotype via GenotypeIdentifier,
 # analyse le site de clivage via CleavageSiteAnalyzer,
 # et retourne tous les résultats dans un seul dictionnaire.
-def analyze_newcastle_sequence(
+def analyze_sequence(
     input_fasta: str,
     reference_sequences: Dict[str, str],
     top_matches: int = 3,
@@ -523,7 +523,7 @@ def build_tree_iqtree2(aln_file):
             "1000",
             "-nt",
             "AUTO",
-            "-redo",  # nécessaire parce que le pipeline "Per-query" réutilise le même chemin de fichier temporaire (tmp_aligned.fasta) à chaque itération de la boucle — sans -redo, IQ-TREE2 refuse de tourner une 2e fois sur un fichier de sortie déjà existant
+            "-redo",  # nécessaire parce que le pipeline "Per-query" réutilise le même chemin de fichier temporaire (tmp_aligned.fasta) à chaque itération de la boucle - sans -redo, IQ-TREE2 refuse de tourner une 2e fois sur un fichier de sortie déjà existant
         ],
         capture_output=True,
         text=True,
@@ -534,7 +534,7 @@ def build_tree_iqtree2(aln_file):
         return None
     tree = Phylo.read(treefile, "newick")
     tree.root_at_midpoint()  # pareil que pour fasttree
-    # IQ-TREE2 exprime le bootstrap ultrafast en 0-100, FastTree en 0-1 (voir tree_to_plotly) — on normalise ici
+    # IQ-TREE2 exprime le bootstrap ultrafast en 0-100, FastTree en 0-1 (voir tree_to_plotly) - on normalise ici
     for clade in tree.find_clades():
         if clade.confidence is not None:
             clade.confidence = clade.confidence / 100

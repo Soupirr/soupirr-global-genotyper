@@ -1,5 +1,5 @@
 """
-NDV Genotyper - Entry point for the packaged .exe
+Genotyper - Entry point for the packaged .exe
 Generated Using Claude
 """
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     def set_icon():
         icon_path = os.path.join(base_path, "misc", "icon.png")
-        hwnd = ctypes.windll.user32.FindWindowW(None, "NDV Genotyper")
+        hwnd = ctypes.windll.user32.FindWindowW(None, "Soupirr's Genotyper")
         if hwnd:
             hicon = ctypes.windll.user32.LoadImageW(None, icon_path, 1, 0, 0, 0x10)
             if hicon:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 ctypes.windll.user32.SendMessageW(hwnd, 0x80, 1, hicon)
 
     window = webview.create_window(
-        "NDV Genotyper", "http://127.0.0.1:8501", maximized=True
+        "Soupirr's Genotyper", "http://127.0.0.1:8501", maximized=True
     )
     window.events.loaded += set_icon
     webview.start(gui="edgechromium")

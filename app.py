@@ -111,7 +111,7 @@ with st.sidebar:
 
         st.divider()
         st.markdown(
-            "**Pathogenicity configuration** *(optional — leave blank to skip)*"
+            "**Pathogenicity configuration** *(optional - leave blank to skip)*"
         )
 
         cleavage_start = st.number_input(
@@ -125,11 +125,11 @@ with st.sidebar:
         motif_file = st.file_uploader(
             "Upload virulence motif file",
             type=["csv", "txt"],
-            help="CSV with columns: motif, label, type — where type is 'virulent' or 'avirulent'",
+            help="CSV with columns: motif, label, type - where type is 'virulent' or 'avirulent'",
             key=f"csv_{st.session_state['form_key']}",
         )
         st.caption(
-            "Expected format: `motif,label,type` — e.g. `RRQKRF,VFcs-1,virulent`"
+            "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
         )
 
         adding_button = st.button("Add to the registry")
@@ -185,16 +185,16 @@ with st.sidebar:
             del st.session_state["success_msg"]
         if "mig_reports" in st.session_state:
             for fname, mig_stats in st.session_state["mig_reports"]:
-                with st.expander(f"Migration report — {fname}"):
+                with st.expander(f"Migration report - {fname}"):
                     st.write(
                         f"**{mig_stats['converted']} / {mig_stats['input']}** sequences kept"
                     )
                     st.write(
-                        f"- {mig_stats['duplicates']} dropped — duplicate sequence"
+                        f"- {mig_stats['duplicates']} dropped - duplicate sequence"
                     )
-                    st.write(f"- {mig_stats['no_genotype']} dropped — missing genotype")
+                    st.write(f"- {mig_stats['no_genotype']} dropped - missing genotype")
                     st.write(
-                        f"- {mig_stats['malformed']} dropped — malformed header (<7 fields)"
+                        f"- {mig_stats['malformed']} dropped - malformed header (<7 fields)"
                     )
             del st.session_state["mig_reports"]
     st.divider()

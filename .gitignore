@@ -6,7 +6,7 @@ __pycache__/
 venv/
 .venv/
 
-# Streamlit — keep config.toml (theme), ignore secrets only
+# Streamlit - keep config.toml (theme), ignore secrets only
 .streamlit/secrets.toml
 
 # Temporary analysis files

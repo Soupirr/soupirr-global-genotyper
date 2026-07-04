@@ -111,7 +111,9 @@ def build_map_dataframe(path):
 
 def render(path):
     st.header("Global Distribution Map")
-    st.markdown("Explore the geographic distribution of NDV genotypes worldwide.")
+    st.markdown(
+        "Explore the geographic distribution of the reference dataset genotypes worldwide."
+    )
 
     if "data_loaded" not in st.session_state:
         st.info(

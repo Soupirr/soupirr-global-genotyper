@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Generated Using Claude
-# PyInstaller spec file for NDV Genotyper
-# Run with: pyinstaller NDVGenotyper.spec
+# PyInstaller spec file for Soupirr's Genotyper
+# Run with: pyinstaller soupirr_genotyper.spec
 #
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files
@@ -96,7 +96,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='NDVGenotyper',
+    name='Soupirr's Genotyper',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -118,5 +118,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='NDVGenotyper',
+    name='Soupirr's Genotyper',
 )

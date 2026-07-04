@@ -296,10 +296,10 @@ def render(path):
             tree = st.session_state["combined_tree"]
             if tree is None:
                 st.warning(
-                    "Could not build the combined tree — try re-running the analysis."
+                    "Could not build the combined tree - try re-running the analysis."
                 )
             else:
-                draw_tree(tree, "Combined tree — all queries", multi_query=True)
+                draw_tree(tree, "Combined tree - all queries", multi_query=True)
 
         # Construction de tous les arbres une seule fois et les mettre en cache
         else:
@@ -328,7 +328,7 @@ def render(path):
                         tree = tree_builder(tmp_aligned)
                         if tree is None:
                             st.warning(
-                                f"Could not build tree for {header[:40]} — try re-running the analysis."
+                                f"Could not build tree for {header[:40]} - try re-running the analysis."
                             )
                         else:
                             st.session_state["trees"][header] = tree

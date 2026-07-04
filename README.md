@@ -15,7 +15,7 @@
 
 A Streamlit web/local application for identifying pathogen genotypes and predicting pathogenicity from nucleotide sequences.
 
-The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA — no code changes.
+The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA - no code changes.
 
 For more information on how to use the app and how to add new entries, see [**QUICK_START.md**](https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md).
 
@@ -25,7 +25,7 @@ For more information on how to use the app and how to add new entries, see [**QU
 
 Pre-built Windows executable available on the [Releases page](../../releases/latest).
 
-Download `NDVGenotyper_Windows.zip`, unzip, and double-click `NDVGenotyper.exe`.
+Download `Genotyper_Windows.zip`, unzip, and double-click `Genotyper.exe`.
 
 ---
 
@@ -61,15 +61,15 @@ The Windows executable requires the MAFFT, FastTree, and IQ-TREE2 Windows binari
 
 1. Download [MAFFT for Windows](https://mafft.cbrc.jp/alignment/software/windows.html) and extract it to `tools/mafft-win/`
 2. Download [FastTree](http://www.microbesonline.org/fasttree/) (`FastTree.exe`) and place it in `tools/`
-3. Download [IQ-TREE2](https://github.com/iqtree/iqtree2/releases) for Windows and extract it to `tools/` (the app expects `tools/iqtree-<version>-Windows/bin/iqtree2.exe` — update the version folder name in `genotyper/analyzer.py::get_iqtree_cmd()` if it doesn't match)
+3. Download [IQ-TREE2](https://github.com/iqtree/iqtree2/releases) for Windows and extract it to `tools/` (the app expects `tools/iqtree-<version>-Windows/bin/iqtree2.exe` - update the version folder name in `genotyper/analyzer.py::get_iqtree_cmd()` if it doesn't match)
 4. Install PyInstaller: `pip install pyinstaller`
 5. Run:
 
 ```bash
-pyinstaller NDVGenotyper.spec
+pyinstaller soupirr_genotyper.spec
 ```
 
-Output is in `dist/NDVGenotyper/`. Zip that folder to distribute.
+Output is in `dist/Genotyper/`. Zip that folder to distribute.
 
 ---
 
@@ -83,7 +83,7 @@ Tools used for alignment and tree construction:
 
 - **IQ-TREE2** - Minh BQ, Schmidt HA, Chernomor O, et al. *IQ-TREE 2: New Models and Efficient Methods for Phylogenetic Inference in the Genomic Era.* Molecular Biology and Evolution, 37(5):1530–1534, 2020. https://doi.org/10.1093/molbev/msaa015
 
-Pathogen-specific literature (genotype nomenclature, cleavage site criteria, etc.) is documented per-entry — see the `.md` file shipped alongside each reference dataset, shown in the app's Statistics tab for that entry.
+Pathogen-specific literature (genotype nomenclature, cleavage site criteria, etc.) is documented per-entry - see the `.md` file shipped alongside each reference dataset, shown in the app's Statistics tab for that entry.
 
 ## Gallery
 

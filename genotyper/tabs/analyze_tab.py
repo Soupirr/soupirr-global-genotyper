@@ -8,7 +8,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from genotyper.analyzer import (
     FASTAParser,
-    analyze_newcastle_sequence,
+    analyze_sequence,
     unpack_top_match,
     SequenceSimilarity,
 )
@@ -64,7 +64,7 @@ def render(path, config=None):
             st.warning(f"⚠ {error}")
         st.info("""
         **How to fix:**
-        1. Download the NDV reference datasets from: https://github.com/NDVconsortium/NDV_Sequence_Datasets
+        1. Download the reference datasets from: https://www.ncbi.nlm.nih.gov/labs/virus/vssi/#/
         2. Place these files in the "sequences" folder
         3. Restart the app
         """)
@@ -133,10 +133,10 @@ def render(path, config=None):
             # Input sous forme de texte
             with input_tab1:
                 input_fasta = st.text_area(
-                    "Paste your Newcastle Disease F gene sequence in FASTA format:",
+                    "Paste your sequence in FASTA format:",
                     height=200,
                     placeholder=">your_sequence_name\nATGGGCTCCAGATCCTCTAC...",
-                    help="Should be a complete F gene sequence (~1662 bp)",
+                    help="Should be a complete gene sequence",
                     key="fasta_input_area",
                 )
 
@@ -193,7 +193,7 @@ def render(path, config=None):
                     )
 
                     single_fasta = f">{header}\n{sequence}"
-                    result = analyze_newcastle_sequence(
+                    result = analyze_sequence(
                         input_fasta=single_fasta,
                         reference_sequences=references,
                         top_matches=top_n_matches,
@@ -269,7 +269,7 @@ def render(path, config=None):
                         and top_match["avg_similarity"] < 95
                     ):
                         st.warning(
-                            "⚠ Average Similarity score is below 95% — result may not be interpretable with the Hamming method. "
+                            "⚠ Average Similarity score is below 95% - result may not be interpretable with the Hamming method. "
                             "Consider using the Pairwise method for more accurate results."
                         )
 

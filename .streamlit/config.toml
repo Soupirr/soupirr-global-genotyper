@@ -1,13 +1,13 @@
 [theme]
 base = "dark"
 
-# Core — late night club, cool blue light through smoke
+# Core - late night club, cool blue light through smoke
 primaryColor = "#00c9a7"
 backgroundColor = "#060d14"
 secondaryBackgroundColor = "#0c1a24"
 textColor = "#b8d4e8"
 
-# Typography — smooth, rounded, effortless cool
+# Typography - smooth, rounded, effortless cool
 font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500&display=swap"
 headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300&display=swap"
 baseFontSize = 15
@@ -15,23 +15,23 @@ baseFontWeight = 300
 headingFontSizes = ["3rem", "2.4rem", "1.8rem", "1.5rem", "1.2rem", "1rem"]
 headingFontWeights = [200, 200, 300, 300, 300, 300]
 
-# Code — aquatic terminal
+# Code - aquatic terminal
 codeFont = "'Inconsolata':https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&display=swap"
 codeFontSize = "0.9rem"
 codeTextColor = "#00c9a7"
 codeBackgroundColor = "#040b10"
 codeFontWeight = 300
 
-# Shapes — soft, fluid, like water
+# Shapes - soft, fluid, like water
 baseRadius = "large"
 buttonRadius = "full"
 borderColor = "#0e2535"
 dataframeBorderColor = "#0e2535"
 dataframeHeaderBackgroundColor = "#0c1a24"
 showWidgetBorder = false
-showSidebarBorder = false
+showSidebarBorder = true
 
-# Softclub palette — the whole blue/green spectrum
+# Softclub palette - the whole blue/green spectrum
 redColor = "#ff6b9d"
 orangeColor = "#ffb347"
 yellowColor = "#87ceeb"
@@ -43,5 +43,5 @@ violetColor = "#6699cc"
 linkColor = "#00c9a7"
 linkUnderline = false
 
-# Charts — ocean gradient
+# Charts - ocean gradient
 chartCategoricalColors = ["#00c9a7", "#0099cc", "#6699cc", "#00e5cc", "#0077aa", "#33bbaa", "#4488bb", "#00ffcc", "#2266aa", "#66ddcc"]
