@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where soffice *)",
+      "Bash(PowerShell -Command \"Get-Command soffice -ErrorAction SilentlyContinue; Get-Command pdftoppm -ErrorAction SilentlyContinue\")"
+    ]
+  }
+}
