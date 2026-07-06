@@ -1,5 +1,7 @@
 <div align="center">
 
+<img width="150" alt="icon" src="https://github.com/user-attachments/assets/d48fb844-fed7-4c78-ad1d-e1d721a50f13" />
+
 <br><br>
   
 ![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
