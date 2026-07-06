@@ -37,13 +37,12 @@ PALETTE = [
 
 # Palette de couleur sans conotation sémantique pour les stats
 PATHO_PALETTE = [
-    "#A855F7",  # violet
-    "#F59E0B",  # amber
-    "#06B6D4",  # cyan
-    "#EC4899",  # rose
-    "#84CC16",  # lime
+    "#A855F7",
+    "#0BF5F1",
+    "#0609D4",
+    "#EC4899",
+    "#FF006F",
 ]
-
 CUSTOM_CSS = """
     <style>
     h1, h2, h3 {
