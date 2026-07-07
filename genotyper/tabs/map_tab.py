@@ -353,41 +353,49 @@ def render(path):
 
                 # onglet par pays
                 with tab_country:
-                    selected_continent = st.selectbox(
-                        "Select a continent",
-                        sorted(df_report["continent"].unique()),
-                    )
-                    df_country = df_report[df_report["continent"] == selected_continent]
-                    country_geno = (
-                        df_country.groupby(["country", "genotype"])
-                        .size()
-                        .reset_index(name="count")
-                    )
+                    all_genotypes_country = sorted(df_report["genotype"].unique())
+                    geno_color_country = {
+                        g: PALETTE[i % len(PALETTE)]
+                        for i, g in enumerate(all_genotypes_country)
+                    }
 
-                    fig_country = go.Figure()
-                    for geno in country_geno["genotype"].unique():
-                        df_g = country_geno[country_geno["genotype"] == geno]
-                        fig_country.add_trace(
-                            go.Bar(
-                                name=geno,
-                                x=df_g["country"],
-                                y=df_g["count"],
-                                hovertemplate="<b>%{x}</b><br>Genotype: %{fullData.name}<br>Sequences: %{y}<extra></extra>",
-                            )
+                    for continent in sorted(df_report["continent"].unique()):
+                        df_country = df_report[df_report["continent"] == continent]
+                        country_geno = (
+                            df_country.groupby(["country", "genotype"])
+                            .size()
+                            .reset_index(name="count")
                         )
-                    fig_country.update_layout(
-                        barmode="stack",
-                        xaxis_title="Country",
-                        yaxis_title="Sequences",
-                        height=400,
-                        margin=dict(l=0, r=0, t=20, b=0),
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        xaxis_tickangle=-45,
-                        hoverlabel=dict(
-                            bgcolor="#0c1a24",
-                            font_color="white",
-                            bordercolor="rgba(255,255,255,0.2)",
-                        ),
-                    )
-                    st.plotly_chart(fig_country, width="stretch")
+
+                        st.subheader(continent)
+                        fig_country = go.Figure()
+                        for geno in country_geno["genotype"].unique():
+                            df_g = country_geno[country_geno["genotype"] == geno]
+                            fig_country.add_trace(
+                                go.Bar(
+                                    name=geno,
+                                    x=df_g["country"],
+                                    y=df_g["count"],
+                                    marker_color=geno_color_country[geno],
+                                    hovertemplate="<b>%{x}</b><br>Genotype: %{fullData.name}<br>Sequences: %{y}<extra></extra>",
+                                )
+                            )
+                        fig_country.update_layout(
+                            barmode="stack",
+                            xaxis_title="Country",
+                            yaxis_title="Sequences",
+                            height=400,
+                            margin=dict(l=0, r=0, t=10, b=0),
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            xaxis_tickangle=-45,
+                            hoverlabel=dict(
+                                bgcolor="#0c1a24",
+                                font_color="white",
+                                bordercolor="rgba(255,255,255,0.2)",
+                            ),
+                        )
+                        st.plotly_chart(
+                            fig_country, width="stretch", key=f"country_{continent}"
+                        )
+                        st.divider()

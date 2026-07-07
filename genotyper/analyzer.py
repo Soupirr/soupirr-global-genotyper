@@ -260,6 +260,21 @@ class CleavageSiteAnalyzer:
                 protein.append(aa)
         return "".join(protein)
 
+    # Verification pour que X match avec tout les acides aminés
+    @staticmethod
+    def motif_matches(motif: str, sequence: str) -> bool:
+        if len(motif) > len(sequence):
+            return False
+        for i in range(len(sequence) - len(motif) + 1):
+            match = True
+            for j, aa in enumerate(motif):
+                if aa != "X" and sequence[i + j] != aa:
+                    match = False
+                    break
+            if match:
+                return True
+        return False
+
     @staticmethod
     def analyze(
         sequence: str,
@@ -332,7 +347,7 @@ class CleavageSiteAnalyzer:
                 (cleavage_region_prot_minus_one, result_minus_one),
             ]:
                 for motif, label in motifs.items():
-                    if motif in frames:
+                    if CleavageSiteAnalyzer.motif_matches(motif, frames):
                         result_dict["pathogenicity"] = type_name
                         result_dict["motif_type"] = motif
                         result_dict["motif_category"] = label

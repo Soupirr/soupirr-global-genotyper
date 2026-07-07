@@ -398,3 +398,6 @@ def render(path, entry_config=None):
                     showlegend=False,
                 )
                 st.plotly_chart(fig_vir_pie, width="stretch")
+
+            with st.expander("Explore Pathogenecity by sequence"):
+                st.dataframe(df_patho)

@@ -11,6 +11,7 @@ from genotyper.analyzer import (
     analyze_sequence,
     unpack_top_match,
     SequenceSimilarity,
+    CleavageSiteAnalyzer,
 )
 
 
@@ -319,19 +320,30 @@ def render(path, config=None):
                         if cleavage["cleavage_region_found"]:
                             motif = cleavage["motif_type"]
                             protein = cleavage["cleavage_protein"]
-                            motif_found = bool(motif and protein and motif in protein)
+
+                            match_idx = None
+                            if motif and protein:
+                                for i in range(len(protein) - len(motif) + 1):
+                                    if CleavageSiteAnalyzer.motif_matches(
+                                        motif, protein[i : i + len(motif)]
+                                    ):
+                                        match_idx = i
+                                        break
+                            motif_found = match_idx is not None
 
                             col1, col2, col3 = st.columns([3, 1, 1])
 
                             with col1:
                                 st.write("**Cleavage Region (protein):**")
                                 if motif_found:
-                                    idx = protein.index(motif)
-                                    before = protein[:idx]
-                                    after = protein[idx + len(motif) :]
+                                    before = protein[:match_idx]
+                                    matched = protein[
+                                        match_idx : match_idx + len(motif)
+                                    ]
+                                    after = protein[match_idx + len(motif) :]
                                     color = color = "#00dac7"
                                     st.markdown(
-                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{motif}</span>{after}</div>",
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:{color}'>{matched}</span>{after}</div>",
                                         unsafe_allow_html=True,
                                     )
                                 else:

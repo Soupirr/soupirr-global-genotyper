@@ -2,7 +2,7 @@
 
 import streamlit as st
 from genotyper.tabs import tree_tab, analyze_tab, stats_tab, validation_tab
-from genotyper.config import CUSTOM_CSS, SEQ_FOLDER, MISC_FOLDER
+from genotyper.config import CUSTOM_CSS, SEQ_FOLDER
 from genotyper.migration import migrate_fasta_text
 import json
 import os
@@ -38,9 +38,9 @@ def load_entry_config(entry_path: str) -> dict:
     if "cleavage_start" in raw:
         config["cleavage_start"] = raw["cleavage_start"]
 
-    entry_name = os.path.basename(entry_path)
-    motifs_path = os.path.join(entry_path, f"{entry_name}_motifs.csv")
-    if os.path.exists(motifs_path):
+    motifs_files = [f for f in os.listdir(entry_path) if f.endswith("_motifs.csv")]
+    if motifs_files:
+        motifs_path = os.path.join(entry_path, motifs_files[0])
         motifs_by_type = {}
         with open(motifs_path, newline="") as f:
             for row in csv.DictReader(f):
@@ -78,11 +78,6 @@ if "form_key" not in st.session_state:
     st.session_state["form_key"] = 0
 
 
-def display_documentation():
-    with open(os.path.join(MISC_FOLDER, "QUICK_START.md"), "r", encoding="utf-8") as f:
-        st.markdown(f.read())
-
-
 def reset_app():
     st.cache_resource.clear()
     st.cache_data.clear()
@@ -91,7 +86,10 @@ def reset_app():
 
 
 with st.sidebar:
-    documentation_button = st.button("Documentation", on_click=display_documentation)
+    st.link_button(
+        "Documentation",
+        "https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md",
+    )
     entry = sorted(os.listdir(SEQ_FOLDER))
     st.divider()
     selection = st.selectbox(
