@@ -1,6 +1,4 @@
 <div align="center">
-
-<br><br>
   
 ![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.57.0-FF4B4B?logo=streamlit&logoColor=white)
