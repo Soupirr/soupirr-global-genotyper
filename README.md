@@ -1,11 +1,13 @@
 <div align="center">
 
+<img width="150" alt="icon" src="https://github.com/user-attachments/assets/d48fb844-fed7-4c78-ad1d-e1d721a50f13" />
+
 <br><br>
   
 ![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.57.0-FF4B4B?logo=streamlit&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
-![GitHub release](https://img.shields.io/github/v/release/Soupirr/NDV-genotyper)
+![GitHub release](https://img.shields.io/github/v/release/Soupirr/soupirr-global-genotyper)
 ![License](https://img.shields.io/badge/license-MIT-green)
 </div>
 
