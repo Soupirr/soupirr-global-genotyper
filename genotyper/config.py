@@ -43,6 +43,8 @@ PATHO_PALETTE = [
     "#EC4899",
     "#FF006F",
 ]
+
+# Look de l'appli
 CUSTOM_CSS = """
     <style>
     h1, h2, h3 {

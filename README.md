@@ -52,23 +52,6 @@ The app will open in your browser at `http://localhost:8501`.
 
 ---
 
-## Build the Windows executable
-
-The Windows executable requires the MAFFT, FastTree, and IQ-TREE2 Windows binaries placed in a `tools/` folder (not tracked by git).
-
-1. Download [MAFFT for Windows](https://mafft.cbrc.jp/alignment/software/windows.html) and extract it to `tools/mafft-win/`
-2. Download [FastTree](http://www.microbesonline.org/fasttree/) (`FastTree.exe`) and place it in `tools/`
-3. Download [IQ-TREE2](https://github.com/iqtree/iqtree2/releases) for Windows and extract it to `tools/` (the app expects `tools/iqtree-<version>-Windows/bin/iqtree2.exe` - update the version folder name in `genotyper/analyzer.py::get_iqtree_cmd()` if it doesn't match)
-4. Install PyInstaller: `pip install pyinstaller`
-5. Run:
-
-```bash
-pyinstaller soupirr_genotyper.spec
-```
-
-Output is in `dist/Genotyper/`. Zip that folder to distribute.
-
----
 
 ## References
 
@@ -80,7 +63,17 @@ Tools used for alignment and tree construction:
 
 - **IQ-TREE2** - Minh BQ, Schmidt HA, Chernomor O, et al. *IQ-TREE 2: New Models and Efficient Methods for Phylogenetic Inference in the Genomic Era.* Molecular Biology and Evolution, 37(5):1530–1534, 2020. https://doi.org/10.1093/molbev/msaa015
 
-Pathogen-specific literature (genotype nomenclature, cleavage site criteria, etc.) is documented per-entry - see the `.md` file shipped alongside each reference dataset, shown in the app's Statistics tab for that entry.
+- Dimitrov et al. (2019) - Updated unified phylogenetic classification system and revised
+nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917 
+
+- Wang et al. (2017) - Comprehensive analysis of amino acid sequence diversity at the F protein cleavage site of Newcastle disease virus in fusogenic activity, https://doi.org/10.1371/journal.pone.0183923.
+
+### Newcastle Disease Virus Dataset Citation
+
+Dimitrov, K.M., Abolnik, C., Afonso, C.L., Albina, E., Bahl, J., Berg, M., Briand, F.X., Brown, I.H., Choi, K.S., Chvala, I., Diel, D.G., Durr, P.A., Ferreira, H.L., Fusaro, A., Gil, P., Goujgoulova, G.V., Grund, C., Hicks, J.T., Joannis, T.M., Kim Torchetti, M., Kolosov, S., Lambrecht, B., Lewis, N.S., Liu, H., Liu, H., McCullough, S., Miller, P.J., Monne, I., Muller, C.P., Munir, M., Reischak, D., Sabra, M., Samal, S.K., Servan de Almeida, R., Shittu, I., Snoeck, C.J., Suarez, D.L., Van Borm, S., Wang, Z., Wong, F.Y.K., 2019. Updated unified phylogenetic classification system and revised nomenclature for Newcastle disease virus. *Infect. Genet. Evol.*, 103917.
+https://doi.org/10.1016/j.meegid.2019.103917
+
+---
 
 ## Gallery
 

@@ -8,6 +8,8 @@ import os
 import platform
 import shutil
 import zlib
+import csv
+import json
 from genotyper.config import PALETTE
 
 # ============================================================================
@@ -43,6 +45,60 @@ def get_iqtree_cmd():
         return os.path.join(
             base_dir, "tools", "iqtree-2.4.0-Windows", "bin", "iqtree2.exe"
         )
+
+
+# ============================================================================
+# ============================================================================
+
+
+# Charge les config de pathogénécité et les motifs depuis les dossier d'entrée
+def load_gene_config(gene_path: str) -> dict:
+    config = {}  # vide initial
+    config_path = os.path.join(gene_path, "_config.json")  # chemin
+    if os.path.exists(config_path):  # verif
+        with open(config_path) as f:
+            raw = json.load(f)  # charge les config
+        if "cleavage_start" in raw:
+            config["cleavage_start"] = raw["cleavage_start"]
+        if "genotype_pattern" in raw:
+            config["genotype_pattern"] = raw["genotype_pattern"]
+
+    motifs_files = [
+        f for f in os.listdir(gene_path) if f.endswith("_motifs.csv")
+    ]  # charge les fichier qui finissent par "motif"
+    if motifs_files:  # verif
+        motifs_by_type = {}  # reset
+        with open(os.path.join(gene_path, motifs_files[0]), newline="") as f:
+            for row in csv.DictReader(f):  # utilise DictReader sur chaque fichier motif
+                motif = row["motif"].strip().upper()
+                label = row["label"].strip()
+                type_name = row["type"].strip().lower()
+                if type_name not in motifs_by_type:
+                    motifs_by_type[type_name] = {}
+                motifs_by_type[type_name][motif] = label
+        if motifs_by_type:
+            config["motifs_by_type"] = (
+                motifs_by_type  # import les config dans la variable config
+            )
+    return config
+
+
+def load_entry_config(entry_path: str) -> dict:
+    genes = [
+        f for f in os.listdir(entry_path) if os.path.isdir(os.path.join(entry_path, f))
+    ]  # import les fichier des différents genes
+
+    if genes:
+        # si il y a des genes retourne un dict avec "multi": True et une config par gène
+        return {
+            "multi": True,
+            "genes": {
+                gene: load_gene_config(os.path.join(entry_path, gene))
+                for gene in sorted(genes)
+            },
+        }
+    else:
+        return load_gene_config(entry_path)
 
 
 # ============================================================================

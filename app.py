@@ -4,9 +4,9 @@ import streamlit as st
 from genotyper.tabs import tree_tab, analyze_tab, stats_tab, validation_tab
 from genotyper.config import CUSTOM_CSS, SEQ_FOLDER
 from genotyper.migration import migrate_fasta_text
+from genotyper.analyzer import load_entry_config
 import json
 import os
-import csv
 
 
 # Page configuration
@@ -26,36 +26,6 @@ tab_labels = [
     "Statistics",
     "Precision Validation",
 ]
-
-
-# Charge les config de pathogénécité et les motifs depuis les dossier d'entrée
-def load_entry_config(entry_path: str) -> dict:
-    config_path = os.path.join(entry_path, "_config.json")
-    if not os.path.exists(config_path):
-        return {}  # retourne rien si il n'y en a pas
-    config = {}
-
-    with open(config_path) as f:
-        raw = json.load(f)
-    if "cleavage_start" in raw:
-        config["cleavage_start"] = raw["cleavage_start"]
-
-    motifs_files = [f for f in os.listdir(entry_path) if f.endswith("_motifs.csv")]
-    if motifs_files:
-        motifs_path = os.path.join(entry_path, motifs_files[0])
-        motifs_by_type = {}
-        with open(motifs_path, newline="") as f:
-            for row in csv.DictReader(f):
-                motif = row["motif"].strip().upper()
-                label = row["label"].strip()
-                type_name = row["type"].strip().lower()
-                if type_name not in motifs_by_type:
-                    motifs_by_type[type_name] = {}
-                motifs_by_type[type_name][motif] = label
-        if motifs_by_type:
-            config["motifs_by_type"] = motifs_by_type
-
-    return config
 
 
 st.html("""

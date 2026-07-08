@@ -1,7 +1,4 @@
-"""
-Assembles the analysis results, the similarity matrix, and the phylogenetic
-tree(s) into one downloadable HTML file.
-"""
+"""Make downloadable Report"""
 
 import html as _html
 from datetime import datetime

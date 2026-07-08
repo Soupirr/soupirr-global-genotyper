@@ -5,6 +5,7 @@ __pycache__/
 .env
 venv/
 .venv/
+launcher.py
 
 # Streamlit - keep config.toml (theme), ignore secrets only
 .streamlit/secrets.toml
@@ -20,4 +21,5 @@ Thumbs.db
 dist/
 build/
 *.spec.bak
+*.spec
 tools/
