@@ -12,7 +12,7 @@
 
 A Streamlit web/local application for identifying pathogen genotypes and predicting pathogenicity from nucleotide sequences.
 
-The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA - no code changes.
+The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA and no code changes.
 
 For more information on how to use the app and how to add new entries, see [**QUICK_START.md**](https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md).
 
