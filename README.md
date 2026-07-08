@@ -6,6 +6,10 @@
 ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
 ![GitHub release](https://img.shields.io/github/v/release/Soupirr/soupirr-global-genotyper)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+<img width="250" alt="icon" src="https://github.com/user-attachments/assets/8078d8f8-d075-48ce-b521-b8d69b227091" />
+
+
 </div>
 
 # Soupirr's Genotyper
