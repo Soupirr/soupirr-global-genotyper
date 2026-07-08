@@ -111,16 +111,16 @@ with st.sidebar:
         col1_side, col2_side = st.columns(2)
 
         with col1_side:
-            if st.button("Mono"):
+            if st.button("Single gene", use_container_width=True):
                 st.session_state["mode"] = "mono"
                 st.session_state.pop("gene_count", None)
 
         with col2_side:
-            if st.button("Multi"):
+            if st.button("Multi-gene", use_container_width=True):
                 st.session_state["mode"] = "dual"
                 st.session_state.pop("gene_count", None)
 
-        st.divider()
+        adding_button = False
 
         # ====================================================================================
         # =======================================MONO=========================================
@@ -160,6 +160,11 @@ with st.sidebar:
             st.caption(
                 "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
             )
+            st.divider()
+            adding_button = st.button(
+                "Add to the registry", type="primary", use_container_width=True
+            )
+            st.write("")
 
         # ====================================================================================
         # =======================================DUAL=========================================
@@ -175,6 +180,7 @@ with st.sidebar:
                 st.session_state["gene_count"] = 1
 
             for i in range(st.session_state["gene_count"]):
+                st.divider()
                 st.markdown(f"**Gene {i + 1}**")
                 st.text_input("Gene name", key=f"gene_name_{i}")
                 st.file_uploader(
@@ -203,19 +209,20 @@ with st.sidebar:
                 st.caption(
                     "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
                 )
-                st.divider()
 
             if st.button("+ Add gene"):
                 st.session_state["gene_count"] += 1
                 st.rerun()
+            st.divider()
+            adding_button = st.button(
+                "Add to the registry", type="primary", use_container_width=True
+            )
+            st.write("")
 
         # ====================================================================================
         # =====================================VALIDATION=====================================
         # ====================================================================================
 
-        st.write("")
-
-        adding_button = st.button("Add to the registry", type="primary")
         if adding_button:
             # =====================================================================MONO
             if st.session_state.get("mode") == "mono":
@@ -352,11 +359,12 @@ with st.sidebar:
                     )
             del st.session_state["mig_reports"]
     st.divider()
-    reset_button = st.button("Reset Cache", on_click=reset_app, type="primary")
 
     st.markdown(
         "##### **If you encounter any issues feel free to report them [here](https://github.com/Soupirr/NDV-genotyper/issues).**"
     )
+    st.write("")
+    reset_button = st.button("Reset Cache", on_click=reset_app)
 # ============================================================================
 # TITRE
 
