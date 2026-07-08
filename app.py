@@ -8,14 +8,16 @@ import json
 import os
 import csv
 
+
 # Page configuration
 st.set_page_config(
     page_title="Soupirr's Genotyper",
     page_icon="misc/icon.png",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
 
 # def des onglets
 tab_labels = [
@@ -85,6 +87,27 @@ def reset_app():
     st.write("Cache cleared !")
 
 
+if "sidebar_closed" not in st.session_state:
+    st.session_state["sidebar_closed"] = False
+
+if "sidebar_opened" not in st.session_state:
+    st.session_state["sidebar_opened"] = True
+    st.components.v1.html(
+        """
+        <script>
+            setTimeout(function() {
+                var sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                var collapseBtn = window.parent.document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+                if (sidebar && sidebar.getAttribute('aria-expanded') === 'false' && collapseBtn) {
+                    collapseBtn.click();
+                }
+            }, 150);
+        </script>
+        """,
+        height=0,
+    )
+
+
 with st.sidebar:
     st.link_button(
         "Documentation",
@@ -95,88 +118,251 @@ with st.sidebar:
     selection = st.selectbox(
         "Select an entry", entry, index=None, placeholder="Select an entry..."
     )
+
+    if selection is not None and not st.session_state.get("sidebar_closed"):
+        st.session_state["sidebar_closed"] = True
+        st.components.v1.html(
+            """
+            <script>
+                setTimeout(function() {
+                    var btn = window.parent.document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+                    if (btn) btn.click();
+                });
+            </script>
+            """,
+            height=0,
+        )
+
+    if selection is None:
+        st.session_state["sidebar_closed"] = False
+
     st.write("")
     with st.expander("Add new references datasets"):
-        entry_name = st.text_input(
-            "Enter the name of the entry", key=f"name_{st.session_state['form_key']}"
-        )
-        upload_file = st.file_uploader(
-            "Upload the reference FASTA file",
-            accept_multiple_files=True,
-            type=["fasta", "fas", "fa", "txt"],
-            key=f"fasta_{st.session_state['form_key']}",
-        )
+        col1_side, col2_side = st.columns(2)
+
+        with col1_side:
+            if st.button("Mono"):
+                st.session_state["mode"] = "mono"
+                st.session_state.pop("gene_count", None)
+
+        with col2_side:
+            if st.button("Multi"):
+                st.session_state["mode"] = "dual"
+                st.session_state.pop("gene_count", None)
 
         st.divider()
-        st.markdown(
-            "**Pathogenicity configuration** *(optional - leave blank to skip)*"
-        )
 
-        cleavage_start = st.number_input(
-            "bp before the virulence motif area",
-            min_value=0,
-            step=1,
-            help="0-indexed nucleotide position where the cleavage/virulence site starts in the sequence.",
-            key=f"cleavage_start_{st.session_state['form_key']}",
-        )
+        # ====================================================================================
+        # =======================================MONO=========================================
+        # ====================================================================================
 
-        motif_file = st.file_uploader(
-            "Upload virulence motif file",
-            type=["csv", "txt"],
-            help="CSV with columns: motif, label, type - where type is 'virulent' or 'avirulent'",
-            key=f"csv_{st.session_state['form_key']}",
-        )
-        st.caption(
-            "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
-        )
+        if st.session_state.get("mode") == "mono":
+            entry_name = st.text_input(
+                "Enter the name of the entry",
+                key=f"name_{st.session_state['form_key']}",
+            )
+            upload_file = st.file_uploader(
+                "Upload the reference FASTA file",
+                accept_multiple_files=True,
+                type=["fasta", "fas", "fa", "txt"],
+                key=f"fasta_{st.session_state['form_key']}",
+            )
 
-        adding_button = st.button("Add to the registry")
-        if adding_button:
-            if not upload_file:
-                st.error("Please select at least one FASTA file")
-            elif not entry_name.strip():
-                st.error("Please enter a name")
-            else:
-                entry_path = os.path.join(SEQ_FOLDER, entry_name.strip())
-                os.makedirs(entry_path, exist_ok=True)
+            st.divider()
+            st.markdown(
+                "**Pathogenicity configuration** *(optional - leave blank to skip)*"
+            )
 
-                mig_reports = []
-                for uploaded_files in upload_file:
-                    dest_path = os.path.join(entry_path, uploaded_files.name)
-                    raw_text = (
-                        uploaded_files.getbuffer()
-                        .tobytes()
-                        .decode("utf-8-sig", errors="ignore")
-                    )
-                    migrated_text, mig_stats = migrate_fasta_text(raw_text)
-                    with open(dest_path, "w", encoding="utf-8") as f:
-                        f.write(migrated_text)
-                    mig_reports.append((uploaded_files.name, mig_stats))
+            cleavage_start = st.number_input(
+                "bp before the virulence motif area",
+                min_value=0,
+                step=1,
+                help="0-indexed nucleotide position where the cleavage/virulence site starts in the sequence.",
+                key=f"cleavage_start_{st.session_state['form_key']}",
+            )
 
-                # Sauvegarde de la position de cleavage
-                if cleavage_start != 0:
-                    config_path = os.path.join(entry_path, "_config.json")
-                    with open(config_path, "w") as f:
-                        json.dump(
-                            {
-                                "cleavage_start": int(cleavage_start),
-                            },
-                            f,
-                            indent=2,
-                        )
+            motif_file = st.file_uploader(
+                "Upload virulence motif file",
+                type=["csv", "txt"],
+                help="CSV with columns: motif, label, type - where type is 'virulent' or 'avirulent'",
+                key=f"csv_{st.session_state['form_key']}",
+            )
+            st.caption(
+                "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
+            )
 
-                # Save motifs as {entry_name}_motifs.csv
-                if motif_file:
-                    motifs_path = os.path.join(
-                        entry_path, f"{entry_name.strip()}_motifs.csv"
-                    )
-                    with open(motifs_path, "wb") as f:
-                        f.write(motif_file.getbuffer())
+        # ====================================================================================
+        # =======================================DUAL=========================================
+        # ====================================================================================
 
-                st.session_state["form_key"] += 1
-                st.session_state["success_msg"] = f"Entry '{entry_name}' added!"
-                st.session_state["mig_reports"] = mig_reports
+        if st.session_state.get("mode") == "dual":
+            entry_name = st.text_input(
+                "Enter the name of the entry",
+                key=f"name_{st.session_state['form_key']}",
+            )
+
+            if "gene_count" not in st.session_state:
+                st.session_state["gene_count"] = 1
+
+            for i in range(st.session_state["gene_count"]):
+                st.markdown(f"**Gene {i + 1}**")
+                st.text_input("Gene name", key=f"gene_name_{i}")
+                st.file_uploader(
+                    "Fasta file(s)",
+                    accept_multiple_files=True,
+                    type=["fasta", "fas", "fa"],
+                    key=f"gene_fasta_{i}",
+                )
+                st.text_input(
+                    "Genotype pattern (ex: 'H\\d+' for H1/H2/H3/...)",
+                    key=f"gene_patern_{i}",
+                )
+                st.write("")
+                st.markdown(
+                    "**Pathogenicity configuration** *(optional - leave blank to skip)*"
+                )
+                st.number_input(
+                    "Cleavage start (optionnal)",
+                    min_value=0,
+                    step=1,
+                    key=f"cleavage_{i}",
+                )
+                st.file_uploader(
+                    "Motif file (optionnal)", type=["csv", "txt"], key=f"motif_{i}"
+                )
+                st.caption(
+                    "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
+                )
+                st.divider()
+
+            if st.button("+ Add gene"):
+                st.session_state["gene_count"] += 1
                 st.rerun()
+
+        # ====================================================================================
+        # =====================================VALIDATION=====================================
+        # ====================================================================================
+
+        st.write("")
+
+        adding_button = st.button("Add to the registry", type="primary")
+        if adding_button:
+            # =====================================================================MONO
+            if st.session_state.get("mode") == "mono":
+                if not upload_file:
+                    st.error("Please select at least one FASTA file")
+                elif not entry_name.strip():
+                    st.error("Please enter a name")
+                else:
+                    entry_path = os.path.join(SEQ_FOLDER, entry_name.strip())
+                    os.makedirs(entry_path, exist_ok=True)
+                    mig_report = []
+                    for uploaded_files in upload_file:
+                        dest_path = os.path.join(entry_path, uploaded_files.name)
+                        raw_text = (
+                            uploaded_files.getbuffer()
+                            .tobytes()
+                            .decode("utf-8-sig", errors="ignore")
+                        )
+                        migrated_text, mig_stats = migrate_fasta_text(raw_text)
+                        with open(dest_path, "w", encoding="utf-8") as f:
+                            f.write(migrated_text)
+                        mig_report.append((uploaded_files.name, mig_stats))
+                    if cleavage_start != 0:
+                        config_path = os.path.join(entry_path, "_config.json")
+                        with open(config_path, "w") as f:
+                            json.dump(
+                                {"cleavage_start": int(cleavage_start)}, f, indent=2
+                            )
+                    if motif_file:
+                        motif_path = os.path.join(
+                            entry_path, f"{entry_name.strip()}_motifs.csv"
+                        )
+                        with open(motif_path, "wb") as f:
+                            f.write(motif_file.getbuffer())
+                    st.session_state["form_key"] += 1
+                    st.session_state["success_msg"] = f"Entry '{entry_name}' added !"
+                    st.session_state["mig_reports"] = mig_report
+                    st.rerun()
+
+            # ======================================================================DUAL
+            elif st.session_state.get("mode") == "dual":
+                gene_count = st.session_state.get("gene_count", 1)
+                entry_name_dual = entry_name.strip()
+
+                # collecte des données de chaque gènes depuis la ss
+                genes = []
+                for i in range(gene_count):
+                    genes.append(
+                        {
+                            "name": st.session_state.get(f"gene_name_{i}", "").strip(),
+                            "files": st.session_state.get(f"gene_fasta_{i}", []),
+                            "pattern": st.session_state.get(
+                                f"gene_patern_{i}", ""
+                            ).strip(),
+                            "cleavage": st.session_state.get(f"cleavage_{i}", 0),
+                            "motif": st.session_state.get(f"motif_{i}", None),
+                        }
+                    )
+
+                # Validation des données
+                if not entry_name_dual:
+                    st.error("Please enter an entry name")
+                elif any(not g["name"] for g in genes):
+                    st.error("Please enter a name for each genes")
+                elif any(not g["files"] for g in genes):
+                    st.error("Please upload at least one FASTA per gene")
+
+                else:
+                    entry_path = os.path.join(SEQ_FOLDER, entry_name_dual)
+                    os.makedirs(entry_path, exist_ok=True)
+                    mig_report = []
+
+                    for g in genes:
+                        gene_path = os.path.join(entry_path, g["name"])
+                        os.makedirs(gene_path, exist_ok=True)
+
+                        # FASTA
+                        for uploaded_files in g["files"]:
+                            dest_path = os.path.join(gene_path, uploaded_files.name)
+                            raw_text = (
+                                uploaded_files.getbuffer()
+                                .tobytes()
+                                .decode("utf-8-sig", errors="ignore")
+                            )
+                            migrated_text, mig_stats = migrate_fasta_text(raw_text)
+                            with open(dest_path, "w", encoding="utf-8") as f:
+                                f.write(migrated_text)
+                            mig_report.append(
+                                (f"{g['name']}/{uploaded_files.name}", mig_stats)
+                            )
+
+                        # Config json
+                        config = {}
+                        if g["cleavage"] != 0:
+                            config["cleavage_start"] = int(g["cleavage"])
+                        if g["pattern"]:
+                            config["genotype_pattern"] = g["pattern"]
+                        if config:
+                            with open(
+                                os.path.join(gene_path, "_config.json"), "w"
+                            ) as f:
+                                json.dump(config, f, indent=2)
+
+                        # Fichier motif
+                        if g["motif"]:
+                            motif_path = os.path.join(
+                                gene_path, f"{g['name']}_motifs.csv"
+                            )
+                            with open(motif_path, "wb") as f:
+                                f.write(g["motif"].getbuffer())
+
+                    st.session_state["form_key"] += 1
+                    st.session_state["success_msg"] = (
+                        f"Entry '{entry_name_dual}' added!"
+                    )
+                    st.session_state["mig_reports"] = mig_report
+                    st.rerun()
 
         if "success_msg" in st.session_state:
             st.success(st.session_state["success_msg"])
