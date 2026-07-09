@@ -1,6 +1,7 @@
 """Analyze Sequences tab."""
 
 import os
+import re
 import time
 import platform
 import streamlit as st
@@ -76,6 +77,27 @@ def load_all_references(path):
             except Exception as e:
                 errors.append(f"{filename}: {e}")
         return combined_sequences, len(fas_files), len(combined_sequences), errors
+
+
+# ============================================================================
+
+
+def _combined_genotype(gene_results, gene_configs):
+    # Extrait et combine les génotypes de chaque gène via regex
+    parts = []
+    for gene, result in gene_results.items():
+        config = gene_configs.get(gene, {})
+        pattern = config.get("genotype_pattern", "")
+        if not result["genotype_matches"]:
+            parts.append("?")
+            continue
+        top_geno = result["genotype_matches"][0][0]  # génotype du meilleur match
+        if pattern:
+            m_reg = re.search(pattern, top_geno)
+            parts.append(m_reg.group(0) if m_reg else top_geno)
+        else:
+            parts.append(top_geno)
+    return "".join(parts)
 
 
 # ============================================================================
