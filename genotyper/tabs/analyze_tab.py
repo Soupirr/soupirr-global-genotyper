@@ -88,7 +88,7 @@ def render(path, config=None):
         # Alerte pour la méthode de Leveshtein
         if "Hamming" in similarity_method:
             st.warning(
-                "Faster but only works if sequences are only aligned to references."
+                "Faster but only works if sequences are already aligned to references."
             )
 
         st.write("")

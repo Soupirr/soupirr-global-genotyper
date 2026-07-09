@@ -43,18 +43,19 @@ st.html("""
     </style>
 """)
 
-# ============================================================================
-# SIDEBAR
-
-if "form_key" not in st.session_state:
-    st.session_state["form_key"] = 0
-
 
 def reset_app():
     st.cache_resource.clear()
     st.cache_data.clear()
     st.session_state.pop("data_loaded", None)
     st.write("Cache cleared !")
+
+
+# ============================================================================
+# SIDEBAR
+
+if "form_key" not in st.session_state:
+    st.session_state["form_key"] = 0
 
 
 if "sidebar_closed" not in st.session_state:
@@ -79,12 +80,8 @@ if "sidebar_opened" not in st.session_state:
 
 
 with st.sidebar:
-    st.link_button(
-        "Documentation",
-        "https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md",
-    )
     entry = sorted(os.listdir(SEQ_FOLDER))
-    st.divider()
+
     selection = st.selectbox(
         "Select an entry", entry, index=None, placeholder="Select an entry..."
     )
@@ -364,7 +361,12 @@ with st.sidebar:
         "##### **If you encounter any issues feel free to report them [here](https://github.com/Soupirr/NDV-genotyper/issues).**"
     )
     st.write("")
+    st.link_button(
+        "Documentation",
+        "https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md",
+    )
     reset_button = st.button("Reset Cache", on_click=reset_app)
+
 # ============================================================================
 # TITRE
 

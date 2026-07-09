@@ -19,7 +19,7 @@ Use the **"Add new references datasets"** expander in the sidebar:
 
 The entry folder will be created automatically under `data/sequences/`.
 
-When downloading all result from **NCBI Virus**, after filtering the sequences you want to follow this custom header build **in the order provided :**
+When downloading all result from **NCBI Virus**, you want to follow this custom header build:
 
 
 | |
@@ -31,7 +31,7 @@ When downloading all result from **NCBI Virus**, after filtering the sequences y
 |Country|
 |Geo Location|
 |Release Date|
-|
+
 
 
 ### Optional Files Per Entry
@@ -48,7 +48,7 @@ You can enrich an entry by placing additional files in its folder:
 
 ## Sequence Header Format
 
-Every reference sequence header must strictly follow this format, fields separated by pipes `|`:
+Every **reference** sequence header must strictly follow this format, fields separated by pipes `|`:
 
 ```
 >ACCESSION|VIRUS|GENOTYPE|HOST|COUNTRY|REGION|YEAR
