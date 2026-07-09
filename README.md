@@ -59,6 +59,11 @@ The app will open in your browser at `http://localhost:8501`.
 
 ## References
 
+- Dimitrov et al. (2019) - Updated unified phylogenetic classification system and revised
+nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917 
+
+- Wang et al. (2017) - Comprehensive analysis of amino acid sequence diversity at the F protein cleavage site of Newcastle disease virus in fusogenic activity, https://doi.org/10.1371/journal.pone.0183923.
+
 Tools used for alignment and tree construction:
 
 - **MAFFT** - Katoh K, Standley DM. *MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability.* Molecular Biology and Evolution, 30(4):772–780, 2013. https://doi.org/10.1093/molbev/mst010
@@ -67,10 +72,6 @@ Tools used for alignment and tree construction:
 
 - **IQ-TREE2** - Minh BQ, Schmidt HA, Chernomor O, et al. *IQ-TREE 2: New Models and Efficient Methods for Phylogenetic Inference in the Genomic Era.* Molecular Biology and Evolution, 37(5):1530–1534, 2020. https://doi.org/10.1093/molbev/msaa015
 
-- Dimitrov et al. (2019) - Updated unified phylogenetic classification system and revised
-nomenclature for Newcastle disease virus, https://doi.org/10.1016/j.meegid.2019.103917 
-
-- Wang et al. (2017) - Comprehensive analysis of amino acid sequence diversity at the F protein cleavage site of Newcastle disease virus in fusogenic activity, https://doi.org/10.1371/journal.pone.0183923.
 
 ### Newcastle Disease Virus Dataset Citation
 

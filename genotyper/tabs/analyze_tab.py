@@ -27,22 +27,55 @@ _FASTA_EXTS = {".fasta", ".fas", ".fa", ".txt"}
 # Charge les datasets de référence / reset les dictionnaires
 @st.cache_resource
 def load_all_references(path):
-    combined_sequences = {}
-    errors = []
+    # Détection si multi gene avec detection de dossier classique
+    subdir = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
+    if subdir:
+        # mode multi-gene
+        genes_ref = {}
+        genes_count = {}
+        all_errors = []
+        for gene in sorted(subdir):
+            # reset des variables pour chaque gene
+            gene_path = os.path.join(path, gene)  # le path avec les dossiers
+            combined = {}  # combine le parsing des differents fasta des genes
+            errors = []
+            fas_file = [
+                f
+                for f in os.listdir(gene_path)
+                if os.path.splitext(f)[1].lower() in _FASTA_EXTS
+            ]  # splitext sépare le nom du fichier de son extension
+            for filename in fas_file:
+                try:
+                    seqs = FASTAParser.parse_file(os.path.join(gene_path, filename))
+                    if seqs:
+                        combined.update(seqs)
+                except Exception as e:
+                    errors.append(
+                        f"{gene}/{filename}: {e}"
+                    )  # si un fichier ne passe pas il est retourné
+            genes_ref[gene] = (
+                combined  # on remplis le dictionnaire genes_ref avec les listes combined
+            )
+            genes_count[gene] = len(combined)  # on compte juste le nombre de gene
+            all_errors.extend(errors)
+        total = sum(genes_count.values())
+        return genes_ref, len(subdir), total, all_errors
 
-    fas_files = [
-        f for f in os.listdir(path) if os.path.splitext(f)[1].lower() in _FASTA_EXTS
-    ]
-
-    for filename in fas_files:
-        try:
-            seqs = FASTAParser.parse_file(os.path.join(path, filename))
-            if seqs:
-                combined_sequences.update(seqs)
-        except Exception as e:
-            errors.append(f"{filename}: {e}")
-
-    return combined_sequences, len(fas_files), len(combined_sequences), errors
+    else:
+        # mode mono gene
+        combined_sequences = {}  # dictionnaire qui contient les séquences
+        errors = []
+        fas_files = [
+            f for f in os.listdir(path) if os.path.splitext(f)[1].lower() in _FASTA_EXTS
+        ]
+        for filename in fas_files:
+            try:
+                seqs = FASTAParser.parse_file(os.path.join(path, filename))
+                if seqs:
+                    combined_sequences.update(seqs)
+            except Exception as e:
+                errors.append(f"{filename}: {e}")
+        return combined_sequences, len(fas_files), len(combined_sequences), errors
 
 
 # ============================================================================
