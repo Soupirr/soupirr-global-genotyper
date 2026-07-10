@@ -1,6 +1,7 @@
 """Statistics / Help tab."""
 
 import os
+import re
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -33,6 +34,102 @@ def render(path, entry_config=None):
     if has_patho_md:
         tab_labels.append("Pathogenicity Documentation")
 
+        # Détection multi/mono avant l'ouverture des tabs
+    db_references, db_files_count, db_total_count, _ = analyze_tab.load_all_references(
+        path
+    )
+    is_multi = bool(entry_config and entry_config.get("multi", False))
+
+    # Métriques globales avant le graphe et la sélection de gène
+    if is_multi:
+        _first_refs = db_references[list(db_references.keys())[0]]
+        _total_sequences = sum(len(refs) for refs in db_references.values())
+        _total_bp = sum(
+            len(seq)
+            for gene_seqs in db_references.values()
+            for seq in gene_seqs.values()
+        )
+        _unique_genotypes = len(
+            {
+                h.split("|")[2]
+                for gene_refs in db_references.values()
+                for h in gene_refs
+                if len(h.split("|")) >= 3
+            }
+        )
+    else:
+        _total_sequences = len(db_references)
+        _total_bp = sum(len(seq) for seq in db_references.values())
+        _unique_genotypes = len(
+            {h.split("|")[2] for h in db_references if len(h.split("|")) >= 3}
+        )
+
+    if is_multi:
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Total Sequences", f"{_total_sequences:,}")
+        col_m2.metric("Total Base Pairs", f"{_total_bp:,}")
+        col_m3.metric("Unique Genotypes", f"{_unique_genotypes:,}")
+        st.divider()
+
+    if is_multi:
+        # Graphe global AVANT la sélection du gène
+        gene_geno_counts = {gene: {} for gene in db_references}
+        global_geno_totals = {}
+        for gene, gene_refs in db_references.items():
+            for header in gene_refs.keys():
+                parts = header.split("|")
+                if len(parts) < 7:
+                    continue
+                geno = parts[2]
+                gene_geno_counts[gene][geno] = gene_geno_counts[gene].get(geno, 0) + 1
+                global_geno_totals[geno] = global_geno_totals.get(geno, 0) + 1
+
+        sorted_genos = [g for g, _ in sorted(global_geno_totals.items(), key=lambda x: x[1], reverse=True)]
+
+        st.subheader("All Genotypes (combined)")
+        fig_global = go.Figure()
+        gene_colors = ["#0099cc", "#00c9a7", "#f4a261", "#e76f51", "#8ecae6"]
+        for i, gene in enumerate(db_references.keys()):
+            counts = gene_geno_counts[gene]
+            y_vals = [counts.get(g, 0) for g in sorted_genos]
+            fig_global.add_trace(go.Bar(
+                name=gene,
+                x=sorted_genos,
+                y=y_vals,
+                marker=dict(
+                    color=gene_colors[i % len(gene_colors)],
+                ),
+                text=y_vals,
+                textposition="inside",
+                hovertemplate="%{x}<br>%{y} seq<br>" + gene + "<extra></extra>",
+            ))
+        fig_global.update_layout(
+            barmode="stack",
+            xaxis_title="Genotype",
+            yaxis_title="Nb. of Sequences",
+            height=350,
+            margin=dict(l=0, r=0, t=0, b=0),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
+            xaxis=dict(type="category", tickangle=-45),
+            legend=dict(orientation="h", y=1.1, x=0),
+        )
+        st.plotly_chart(fig_global, width="stretch")
+        st.divider()
+
+        # Sélection du gène APRÈS le graphe global
+        gene_names = list(db_references.keys())
+        selected_gene = st.selectbox("Select gene for statistics", gene_names)
+        flat_refs = db_references[selected_gene]
+        gene_path = os.path.join(path, selected_gene)
+        gene_cfg = (entry_config.get("genes", {}) or {}).get(selected_gene, {})
+        db_total_count = len(flat_refs)
+    else:
+        flat_refs = db_references
+        gene_path = path
+        gene_cfg = entry_config or {}
+
     tabs = st.tabs(tab_labels)
     stat_tab, map_subtab = tabs[0], tabs[1]
 
@@ -42,33 +139,43 @@ def render(path, entry_config=None):
                 st.markdown(p.read())
 
     with map_subtab:
-        map_tab.render(path)
+        map_tab.render(gene_path)  # ← gene_path disponible maintenant
 
     with stat_tab:
         st.header("Database Statistics")
 
-        db_references, db_files_count, db_total_count, _ = (
-            analyze_tab.load_all_references(path)
+        # Métriques générales
+        total_bp = sum(len(seq) for seq in flat_refs.values())
+        unique_genotypes = len(
+            {h.split("|")[2] for h in flat_refs if len(h.split("|")) >= 3}
         )
 
-        # analyse de tout les champs de chaque header
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Total Sequences", f"{db_total_count:,}")
+        col_m2.metric("Total Base Pairs", f"{total_bp:,}")
+        col_m3.metric("Unique Genotypes", unique_genotypes)
+        st.divider()
+
+        # ── Comptage des sous-génotypes pour le gène sélectionné ──
         genotype_counts = {}
         host_counts = {}
         year_counts = {}
 
-        # Pour ajouter un hôte rajouter une ligne raw_host,normalized_host  dans le CSV
-        patho_csv_path = os.path.join(path, f"{entry_name}_pathogenicity.csv")
-        df_patho = (
-            pd.read_csv(patho_csv_path) if os.path.exists(patho_csv_path) else None
-        )
+        # Pattern du gène sélectionné pour extraire le sous-génotype
+        geno_pattern = gene_cfg.get("genotype_pattern", "") if is_multi else ""
 
-        for header in db_references.keys():
+        for header in flat_refs.keys():
             parts = header.split("|")
             if len(parts) < 7:
                 continue
 
-            genotype = parts[2]
-            genotype_counts[genotype] = genotype_counts.get(genotype, 0) + 1
+            raw_geno = parts[2]
+            if geno_pattern:
+                m = re.search(geno_pattern, raw_geno)
+                geno = m.group(0) if m else raw_geno
+            else:
+                geno = raw_geno
+            genotype_counts[geno] = genotype_counts.get(geno, 0) + 1
 
             host = parts[3].replace("_", " ")
             host = host if host not in ("UNKNOWN", "?", "") else "Unspecified"
@@ -78,24 +185,29 @@ def render(path, entry_config=None):
             if year.isdigit() and len(year) == 4:
                 year_counts[year] = year_counts.get(year, 0) + 1
 
+        # Pour ajouter un hôte rajouter une ligne raw_host,normalized_host  dans le CSV
+        patho_csv_path = os.path.join(path, f"{entry_name}_pathogenicity.csv")
+        df_patho = (
+            pd.read_csv(patho_csv_path) if os.path.exists(patho_csv_path) else None
+        )
+
         df_genotypes = pd.DataFrame(
             sorted(genotype_counts.items(), key=lambda x: x[1], reverse=True),
             columns=["Genotype", "Sequences"],
         )
 
-        _df_map_stats = map_tab.build_map_dataframe(path)
+        _df_map_stats = map_tab.build_map_dataframe(gene_path)
         _df_map_stats = _df_map_stats[_df_map_stats["label"] != "Unknown"].copy()
         _df_map_stats["country"] = _df_map_stats["label"].apply(
             lambda x: x.split(",")[-1].strip()
         )
         country_counts = _df_map_stats["country"].value_counts().to_dict()
 
-        # Statistique de bases
+        # Statistique par gène sélectionné
         years_with_data = [int(y) for y in year_counts if year_counts[y] > 0]
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Sequences", db_total_count)
-        col2.metric("Unique Sub-Genotypes", len(genotype_counts))
-        col3.metric(
+        col1, col2 = st.columns(2)
+        col1.metric("Unique Sub-Genotypes", len(genotype_counts))
+        col2.metric(
             "Year Range",
             f"{min(years_with_data)}–{max(years_with_data)}"
             if years_with_data
@@ -104,7 +216,12 @@ def render(path, entry_config=None):
 
         st.divider()
 
-        st.subheader("Sequences per Genotype")
+        sub_label = (
+            f"Sequences per Sub-Genotype — {selected_gene}"
+            if is_multi
+            else "Sequences per Genotype"
+        )
+        st.subheader(sub_label)
         fig_bar = go.Figure(
             go.Bar(
                 x=df_genotypes["Genotype"],
@@ -284,7 +401,7 @@ def render(path, entry_config=None):
 
         # Fonction qui permet de faire une analyse entière de la pathogénéicité du dataset de ref
         if df_patho is None:
-            cfg = entry_config or {}
+            cfg = gene_cfg
             if "cleavage_start" not in cfg:
                 st.info("No pathogenicity configuration for this entry.")
             else:
@@ -292,7 +409,7 @@ def render(path, entry_config=None):
                 if st.button("Generate Pathogenicity Data", type="primary"):
                     with st.spinner("Analyzing all reference sequences..."):
                         rows = []
-                        for header, sequence in db_references.items():
+                        for header, sequence in flat_refs.items():
                             parts = header.split("|")
                             genotype = parts[2] if len(parts) > 2 else "Unknown"
                             cleavage, _, _ = CleavageSiteAnalyzer.analyze(
@@ -321,6 +438,7 @@ def render(path, entry_config=None):
                 for i, t in enumerate(patho_types)
             }
 
+            # Graph de patho
             fig_gen_patho = go.Figure()
             patho_counts = (
                 df_patho.groupby(["Best Genotype", "Pathogenicity"])

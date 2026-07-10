@@ -289,6 +289,7 @@ def render(path, config=None):
                         st.session_state["multi_results"] = multi_results
                         st.session_state["elapsed_time"] = time.time() - start_time
                         st.session_state["method"] = method
+                        st.session_state["multi_gene_sequences"] = gene_sequences
                         st.rerun()
 
         # ================================================================ MONO

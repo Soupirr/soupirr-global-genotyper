@@ -207,11 +207,29 @@ def draw_tree(tree, title, multi_query=False):
 
 def render(path):
     references, _, _, _ = load_all_references(path)
+    # détect si multi gene ou mono
+    is_multi = bool(references and isinstance(next(iter(references.values())), dict))
+
     st.header("Phylogenetic Tree")
 
-    if "all_sequences" not in st.session_state or "all_results" not in st.session_state:
+    has_analysis = (
+        "multi_results" in st.session_state
+        if is_multi
+        else ("all_sequences" in st.session_state and "all_results" in st.session_state)
+    )
+
+    if not has_analysis:
         st.info("Run an analysis first to display the phylogenetic tree.")
+
     elif "load_tree" not in st.session_state:
+        # sélection du gène en mode multi
+        if is_multi:
+            selected_gene = st.selectbox(
+                "Select gene for tree", list(references.keys())
+            )
+        else:
+            selected_gene = None
+
         col_slider_tree, col_button_tree = st.columns([3, 1])
         with col_slider_tree:
             tree_type = st.radio(
@@ -236,7 +254,6 @@ def render(path):
                 horizontal=True,
                 help="Cladogram: uniform branch lengths. Phylogram: real evolutionary distances.",
             )
-
             tree_method = st.radio(
                 "Tree Method",
                 ["FastTree", "IQ-TREE2"],
@@ -244,16 +261,17 @@ def render(path):
                 help="FastTree: fast, approximate. IQ-TREE2: full ML + ModelFinder + bootstrap, slower for publication.",
             )
             if tree_method == "IQ-TREE2":
-                st.caption(
-                    "IQ-TREE2 is significantly slower than FastTree, especially in Per-query mode with a large number of sequences."
-                )
+                st.caption("IQ-TREE2 might be slower than FastTree.")
+
         with col_button_tree:
-            st.write("")  # petit espace pour aligner verticalement avec le slider
+            st.write("")
             if st.button("Create Trees", type="primary"):
                 st.session_state["load_tree"] = True
                 st.session_state["tree_type"] = tree_type
                 st.session_state["tree_mode"] = tree_mode
                 st.session_state["tree_method"] = tree_method
+                if is_multi:
+                    st.session_state["tree_gene"] = selected_gene
                 if tree_type == "Combined":
                     st.session_state["n_per_query"] = n_per_query
                 else:
@@ -261,7 +279,17 @@ def render(path):
                 st.rerun()
 
     else:
-        all_sequences = st.session_state["all_sequences"]
+        # Récupère les séquences et références selon le mode
+        if is_multi:
+            gene = st.session_state.get("tree_gene", list(references.keys())[0])
+            active_refs = references[gene]
+            multi_gene_seqs = st.session_state.get("multi_gene_sequences", {})
+            all_sequences = multi_gene_seqs.get(gene, {})
+            st.caption(f"Showing trees for gene: **{gene}**")
+        else:
+            active_refs = references
+            all_sequences = st.session_state["all_sequences"]
+
         tree_type = st.session_state.get("tree_type", "Per-query")
         tmp_dir = os.path.join(DATA_FOLDER, "tmp")
         os.makedirs(tmp_dir, exist_ok=True)
@@ -273,25 +301,23 @@ def render(path):
                     pool = {}
                     for qseq in all_sequences.values():
                         for h, s, _ in find_closest_neighbours(
-                            qseq, references, n=n_per
+                            qseq, active_refs, n=n_per
                         ):
                             pool[h] = s
-
                     tmp_fasta = os.path.join(tmp_dir, "combined_input.fasta")
-                    tmp_aligned = os.path.join(tmp_dir, "combined_aligned.fasta")
+                    tmp_align = os.path.join(tmp_dir, "combined_aligned.fasta")
                     with open(tmp_fasta, "w") as f:
                         for qh, qs in all_sequences.items():
                             f.write(f">QUERY_{qh}\n{clean_sequence(qs)}\n")
                         for h, s in pool.items():
                             f.write(f">{h}\n{clean_sequence(s)}\n")
-
-                    align_sequences_mafft(tmp_fasta, tmp_aligned)
+                    align_sequences_mafft(tmp_fasta, tmp_align)
                     tree_builder = (
                         build_tree_iqtree2
                         if st.session_state.get("tree_method") == "IQ-TREE2"
                         else build_tree_fasttree
                     )
-                    st.session_state["combined_tree"] = tree_builder(tmp_aligned)
+                    st.session_state["combined_tree"] = tree_builder(tmp_align)
 
             tree = st.session_state["combined_tree"]
             if tree is None:
@@ -299,9 +325,8 @@ def render(path):
                     "Could not build the combined tree - try re-running the analysis."
                 )
             else:
-                draw_tree(tree, "Combined tree - all queries", multi_query=True)
+                draw_tree(tree, "Combined tree - All queries", multi_query=True)
 
-        # Construction de tous les arbres une seule fois et les mettre en cache
         else:
             if "trees" not in st.session_state:
                 st.session_state["trees"] = {}
@@ -309,17 +334,13 @@ def render(path):
             for header, sequence in all_sequences.items():
                 if header not in st.session_state["trees"]:
                     with st.spinner(f"Building tree for {header[:40]}..."):
-                        # trouve les 20 séquences les plus proche
                         neighbours = find_closest_neighbours(
-                            sequence, references, n=st.session_state["n_neighbours"]
+                            sequence, active_refs, n=st.session_state["n_neighbours"]
                         )
-                        # écrit un fasta temporaire pour les stocker
                         tmp_fasta = os.path.join(tmp_dir, "tmp_input.fasta")
                         tmp_aligned = os.path.join(tmp_dir, "tmp_aligned.fasta")
                         write_temp_fasta(header, sequence, neighbours, tmp_fasta)
-                        # alignes ces séquences avec mafft
                         align_sequences_mafft(tmp_fasta, tmp_aligned)
-                        # les sauvegardes dans session_state
                         tree_builder = (
                             build_tree_iqtree2
                             if st.session_state.get("tree_method") == "IQ-TREE2"
@@ -327,26 +348,20 @@ def render(path):
                         )
                         tree = tree_builder(tmp_aligned)
                         if tree is None:
-                            st.warning(
-                                f"Could not build tree for {header[:40]} - try re-running the analysis."
-                            )
+                            st.warning(f"Could not build tree for {header[:40]}")
                         else:
                             st.session_state["trees"][header] = tree
 
-            # Créer un onglet par séquence analysé
             tree_tabs = st.tabs([h[:30] for h in all_sequences.keys()])
-
-            # L'affichage final
             for i, (header, sequence) in enumerate(all_sequences.items()):
                 with tree_tabs[i]:
                     if header not in st.session_state["trees"]:
                         st.warning(f"Tree unavailable for {header[:40]}")
                         continue
-                    tree = st.session_state["trees"][header]
-                    draw_tree(tree, header)
+                    draw_tree(st.session_state["trees"][header], header)
 
-    # --- Export Report ---
-    if "report_export_df" in st.session_state:
+    # --- Export Report Mono ---
+    if not is_multi and "report_export_df" in st.session_state:
         st.divider()
         st.subheader("Export Report")
         tree_figs = st.session_state.get("report_tree_figs", {})
