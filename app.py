@@ -38,7 +38,8 @@ st.html("""
 
         /* Top bar transparente pour se fondre avec le fond de l'app */
         [data-testid="stHeader"] {
-            background-color: transparent;
+            background-color: rgba(14, 17, 23, 0.3);
+            backdrop-filter: blur(4px);
         }
     </style>
 """)
@@ -158,10 +159,17 @@ with st.sidebar:
                 "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
             )
             st.divider()
-            adding_button = st.button(
-                "Add to the registry", type="primary", use_container_width=True
-            )
+            mono_but_1, mono_but_2 = st.columns([2, 1])
+            with mono_but_1:
+                adding_button = st.button(
+                    "Add to the registry", type="primary", use_container_width=True
+                )
+            with mono_but_2:
+                clear_input_mono = st.button("Clear", use_container_width=True)
             st.write("")
+            if clear_input_mono:
+                st.session_state["form_key"] += 1
+                st.rerun()
 
         # ====================================================================================
         # =======================================DUAL=========================================
@@ -179,16 +187,18 @@ with st.sidebar:
             for i in range(st.session_state["gene_count"]):
                 st.divider()
                 st.markdown(f"**Gene {i + 1}**")
-                st.text_input("Gene name", key=f"gene_name_{i}")
+                st.text_input(
+                    "Gene name", key=f"gene_name_{i}_{st.session_state['form_key']}"
+                )
                 st.file_uploader(
                     "Fasta file(s)",
                     accept_multiple_files=True,
                     type=["fasta", "fas", "fa"],
-                    key=f"gene_fasta_{i}",
+                    key=f"gene_fasta_{i}_{st.session_state['form_key']}",
                 )
                 st.text_input(
                     "Genotype pattern (ex: 'H\\d+' for H1/H2/H3/...)",
-                    key=f"gene_patern_{i}",
+                    key=f"gene_patern_{i}_{st.session_state['form_key']}",
                 )
                 st.write("")
                 st.markdown(
@@ -198,10 +208,12 @@ with st.sidebar:
                     "Cleavage start (optionnal)",
                     min_value=0,
                     step=1,
-                    key=f"cleavage_{i}",
+                    key=f"cleavage_{i}_{st.session_state['form_key']}",
                 )
                 st.file_uploader(
-                    "Motif file (optionnal)", type=["csv", "txt"], key=f"motif_{i}"
+                    "Motif file (optionnal)",
+                    type=["csv", "txt"],
+                    key=f"motif_{i}_{st.session_state['form_key']}",
                 )
                 st.caption(
                     "Expected format: `motif,label,type` - e.g. `RRQKRF,VFcs-1,virulent`"
@@ -211,10 +223,18 @@ with st.sidebar:
                 st.session_state["gene_count"] += 1
                 st.rerun()
             st.divider()
-            adding_button = st.button(
-                "Add to the registry", type="primary", use_container_width=True
-            )
+            multi_but_1, multi_but_2 = st.columns([2, 1])
+            with multi_but_1:
+                adding_button = st.button(
+                    "Add to the registry", type="primary", use_container_width=True
+                )
+            with multi_but_2:
+                clear_input_multi = st.button("Clear", use_container_width=True)
             st.write("")
+            if clear_input_multi:
+                st.session_state["form_key"] += 1
+                st.session_state["gene_count"] = 1
+                st.rerun()
 
         # ====================================================================================
         # =====================================VALIDATION=====================================
@@ -269,13 +289,21 @@ with st.sidebar:
                 for i in range(gene_count):
                     genes.append(
                         {
-                            "name": st.session_state.get(f"gene_name_{i}", "").strip(),
-                            "files": st.session_state.get(f"gene_fasta_{i}", []),
-                            "pattern": st.session_state.get(
-                                f"gene_patern_{i}", ""
+                            "name": st.session_state.get(
+                                f"gene_name_{i}_{st.session_state['form_key']}", ""
                             ).strip(),
-                            "cleavage": st.session_state.get(f"cleavage_{i}", 0),
-                            "motif": st.session_state.get(f"motif_{i}", None),
+                            "files": st.session_state.get(
+                                f"gene_fasta_{i}_{st.session_state['form_key']}", []
+                            ),
+                            "pattern": st.session_state.get(
+                                f"gene_patern_{i}_{st.session_state['form_key']}", ""
+                            ).strip(),
+                            "cleavage": st.session_state.get(
+                                f"cleavage_{i}_{st.session_state['form_key']}", 0
+                            ),
+                            "motif": st.session_state.get(
+                                f"motif_{i}_{st.session_state['form_key']}", None
+                            ),
                         }
                     )
 
@@ -363,7 +391,7 @@ with st.sidebar:
     st.write("")
     st.link_button(
         "Documentation",
-        "https://github.com/Soupirr/NDV-genotyper/blob/main/misc/QUICK_START.md",
+        "https://github.com/Soupirr/soupirr-global-genotyper/wiki/Getting-Started-%E2%80%90-Adding-a-New-Entry",
     )
     reset_button = st.button("Reset Cache", on_click=reset_app)
 

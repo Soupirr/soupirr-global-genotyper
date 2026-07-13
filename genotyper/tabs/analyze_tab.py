@@ -192,7 +192,7 @@ def render(path, config=None):
                 ]:
                     st.session_state.pop(k, None)
                 for gene in gene_names:
-                    st.session_state.pop(f"fasta_input_{gene}", None)
+                    st.session_state[f"fasta_input_{gene}"] = ""
 
             with st.form("analyze_from_multi", border=False):
                 # une colonne d'input par gene
@@ -200,12 +200,23 @@ def render(path, config=None):
                 gene_inputs = {}
                 for col, gene in zip(cols, gene_names):
                     with col:
-                        gene_inputs[gene] = st.text_area(
-                            f"Gene **{gene}**",
-                            height=200,
-                            placeholder=">specimen_1\nATGGGC...",
-                            key=f"fasta_input_{gene}",
+                        paste_tab, upload_tab = st.tabs(
+                            [f"Gene **{gene}**", "Upload File"]
                         )
+                        with paste_tab:
+                            gene_inputs[gene] = st.text_area(
+                                f"Gene **{gene}**",
+                                height=200,
+                                placeholder=">specimen_1\nATGGGC...",
+                                key=f"fasta_input_{gene}",
+                                label_visibility="collapsed",
+                            )
+                        with upload_tab:
+                            st.file_uploader(
+                                f"FASTA file for {gene}",
+                                type=["fasta", "fas", "fa", "txt"],
+                                key=f"fasta_upload_{gene}",
+                            )
                 col_btn1, col_btn2 = st.columns([0.7, 0.3])
                 with col_btn1:
                     analyze_button = st.form_submit_button(
@@ -219,6 +230,12 @@ def render(path, config=None):
             if analyze_button:
                 for elements in ["multi_results", "trees", "load_tree"]:
                     st.session_state.pop(elements, None)
+
+                # Résolution fichier uploadé vs texte collé
+                for gene in gene_names:
+                    uploaded = st.session_state.get(f"fasta_upload_{gene}")
+                    if uploaded:
+                        gene_inputs[gene] = uploaded.read().decode("utf-8")
 
                 # Validation que tout les gènes ont un FASTA
                 if any(not v or not v.strip() for v in gene_inputs.values()):
@@ -414,162 +431,239 @@ def render(path, config=None):
         st.info(f"Analysis took **{elapsed_time:.2f} seconds**")
         st.divider()
 
-        # Label de l'onglet = header du premier gène de chaque specimen
+        # Sélection du specimen via segmented control
         specimen_labels = [
             list(r["genes"].values())[0]["input_header"][:25] for r in multi_results
         ]
-        specimen_tabs = st.tabs(specimen_labels)
+        selected_label = st.segmented_control(
+            "Specimen", specimen_labels, default=specimen_labels[0]
+        )
+        selected_idx = specimen_labels.index(selected_label) if selected_label in specimen_labels else 0
+        specimen = multi_results[selected_idx]
 
-        for tab, specimen in zip(specimen_tabs, multi_results):
-            with tab:
-                gene_results = specimen["genes"]
-                combined_geno = specimen["combined_genotype"]
+        gene_results = specimen["genes"]
+        combined_geno = specimen["combined_genotype"]
 
-                # affichage  des génotypes combiné
-                st.subheader("Combined Genotype")
-                st.metric("Identified Genotype", combined_geno)
+        # affichage  des génotypes combiné
+        st.markdown(
+            f"""
+            <div style='text-align:center; padding:20px;
+                        border:2px solid rgba(0,201,167,0.4);
+                        border-radius:10px;
+                        background:rgba(0,201,167,0.04);
+                        max-width:350px; margin:0 auto;
+                        box-sizing:border-box;'>
+                <div style='font-size:0.85em; color:#888; margin-bottom:8px;'>
+                    Identified Genotype
+                </div>
+                <div style='font-size:2.5em; font-weight:bold;
+                            color:rgba(0,201,167,0.8); letter-spacing:4px;'>
+                    {combined_geno}
+                </div>
+            </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        # un sous onglet par gene
+        gene_tabs = st.tabs(list(gene_results.keys()))
+        for gene_tab, (gene, result) in zip(gene_tabs, gene_results.items()):
+            with gene_tab:
+                col1_multi, col2_multi = st.columns([0.8, 0.2])
+                with col1_multi:
+                    st.write(f"**Header:** {result['input_header']}")
+                with col2_multi:
+                    st.write(f"**Length:** {result['sequence_length']} bp")
+
+                st.divider()
+                st.subheader("Genotype Identification")
+                matches = result["genotype_matches"]
+                if matches:
+                    top_match = unpack_top_match(matches[0])
+                    col1x, col2x, col3x, col4x, col5x = st.columns(5)
+                    with col1x:
+                        st.metric("Best Match Genotype", top_match["genotype"])
+                    with col2x:
+                        st.metric("Reference Sequences", top_match["sample_count"])
+                    with col3x:
+                        st.metric("Avg Match Score", f"{top_match['avg_similarity']}%")
+                    with col4x:
+                        st.metric("Best Match Score", f"{top_match['best_score']}%")
+                    with col5x:
+                        st.metric(
+                            "Similarity Method",
+                            "Hamming" if method == "hamming" else "Pairwise",
+                        )
+                    if method == "hamming" and top_match["avg_similarity"] < 95:
+                        st.warning(
+                            "⚠ Average Similarity below 95% — consider Pairwise method."
+                        )
+
+                    matches_df = pd.DataFrame(
+                        matches,
+                        columns=[
+                            "Genotype",
+                            "Avg Similarity (%)",
+                            "Reference Count",
+                            "Best Match Header",
+                            "Best Match Score (%)",
+                        ],
+                    )
+                    matches_df = matches_df[
+                        [
+                            "Genotype",
+                            "Avg Similarity (%)",
+                            "Best Match Score (%)",
+                            "Best Match Header",
+                            "Reference Count",
+                        ]
+                    ]
+                    st.dataframe(matches_df, width="stretch", hide_index=True)
                 st.divider()
 
-                # un sous onglet par gene
-                gene_tabs = st.tabs(list(gene_results.keys()))
-                for gene_tab, (gene, result) in zip(gene_tabs, gene_results.items()):
-                    with gene_tab:
-                        col1_multi, col2_multi = st.columns([0.8, 0.2])
-                        with col1_multi:
-                            st.write(f"**Header:** {result['input_header']}")
-                        with col2_multi:
-                            st.write(f"**Length:** {result['sequence_length']} bp")
-
-                        st.divider()
-                        st.subheader("Genotype Identification")
-                        matches = result["genotype_matches"]
-                        if matches:
-                            top_match = unpack_top_match(matches[0])
-                            col1x, col2x, col3x, col4x, col5x = st.columns(5)
-                            with col1x:
-                                st.metric("Best Match Genotype", top_match["genotype"])
-                            with col2x:
-                                st.metric(
-                                    "Reference Sequences", top_match["sample_count"]
-                                )
-                            with col3x:
-                                st.metric(
-                                    "Avg Match Score", f"{top_match['avg_similarity']}%"
-                                )
-                            with col4x:
-                                st.metric(
-                                    "Best Match Score", f"{top_match['best_score']}%"
-                                )
-                            with col5x:
-                                st.metric(
-                                    "Similarity Method",
-                                    "Hamming" if method == "hamming" else "Pairwise",
-                                )
-                            if method == "hamming" and top_match["avg_similarity"] < 95:
-                                st.warning(
-                                    "⚠ Average Similarity below 95% — consider Pairwise method."
-                                )
-
-                            matches_df = pd.DataFrame(
-                                matches,
-                                columns=[
-                                    "Genotype",
-                                    "Avg Similarity (%)",
-                                    "Reference Count",
-                                    "Best Match Header",
-                                    "Best Match Score (%)",
-                                ],
-                            )
-
-                            matches_df = matches_df[
-                                [
-                                    "Genotype",
-                                    "Avg Similarity (%)",
-                                    "Best Match Score (%)",
-                                    "Best Match Header",
-                                    "Reference Count",
-                                ]
-                            ]
-
-                            st.dataframe(matches_df, width="stretch", hide_index=True)
-                        st.divider()
-
-                        st.subheader("Pathogenicity Analysis")
-                        if not result.get("pathogenicity_configured"):
-                            st.info("No pathogenicity configuration for this gene.")
-
-                        else:
-
-                            def display_reading_frame_X(cleavage):
-                                if cleavage["cleavage_region_found"]:
-                                    motif = cleavage["motif_type"]
-                                    protein = cleavage["cleavage_protein"]
-                                    match_idx = None
-                                    if motif and protein:
-                                        for i in range(len(protein) - len(motif) + 1):
-                                            if CleavageSiteAnalyzer.motif_matches(
-                                                motif, protein[i : i + len(motif)]
-                                            ):
-                                                match_idx = i
-                                                break
-                                    motif_found = match_idx is not None
-                                    col1, col2, col3 = st.columns([3, 1, 1])
-                                    with col1:
-                                        st.write("**Cleavage Region (protein):**")
-                                        if motif_found:
-                                            before = protein[:match_idx]
-                                            matched = protein[
-                                                match_idx : match_idx + len(motif)
-                                            ]
-                                            after = protein[match_idx + len(motif) :]
-                                            st.markdown(
-                                                f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:#00dac7'>{matched}</span>{after}</div>",
-                                                unsafe_allow_html=True,
-                                            )
-                                        else:
-                                            st.markdown(
-                                                f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein}</div>",
-                                                unsafe_allow_html=True,
-                                            )
-                                    with col2:
-                                        st.write("**Motif Found:**")
-                                        st.code(
-                                            motif if motif_found else "Not found",
-                                            language="text",
-                                        )
-                                    with col3:
-                                        st.write("**Motif Category:**")
-                                        st.code(
-                                            f"{cleavage['motif_category'] or 'Unknown'}",
-                                            language="text",
-                                        )
-                                    pathogenicity = cleavage["pathogenicity"]
-                                    if pathogenicity == "Undetermined":
-                                        st.warning("Undetermined")
-                                        st.write(
-                                            "No known cleavage site motif found in the expected region."
-                                        )
-                                    else:
-                                        st.info(f"**{pathogenicity.capitalize()}**")
-                                else:
-                                    st.warning(
-                                        "Could not analyze cleavage site. Sequence may be incomplete."
+                st.subheader("Pathogenicity Analysis")
+                if not result.get("pathogenicity_configured"):
+                    st.info("No pathogenicity configuration for this gene.")
+                else:
+                    def display_reading_frame_X(cleavage):
+                        if cleavage["cleavage_region_found"]:
+                            motif = cleavage["motif_type"]
+                            protein = cleavage["cleavage_protein"]
+                            match_idx = None
+                            if motif and protein:
+                                for i in range(len(protein) - len(motif) + 1):
+                                    if CleavageSiteAnalyzer.motif_matches(
+                                        motif, protein[i : i + len(motif)]
+                                    ):
+                                        match_idx = i
+                                        break
+                            motif_found = match_idx is not None
+                            col1, col2, col3 = st.columns([3, 1, 1])
+                            with col1:
+                                st.write("**Cleavage Region (protein):**")
+                                if motif_found:
+                                    before = protein[:match_idx]
+                                    matched = protein[match_idx : match_idx + len(motif)]
+                                    after = protein[match_idx + len(motif) :]
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2);'>{before}<span style='color:#00dac7'>{matched}</span>{after}</div>",
+                                        unsafe_allow_html=True,
                                     )
+                                else:
+                                    st.markdown(
+                                        f"<div style='font-size:20px; text-align:center; font-family:monospace; background-color:#0e1117; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:#868d2f;'>{protein}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                            with col2:
+                                st.write("**Motif Found:**")
+                                st.code(motif if motif_found else "Not found", language="text")
+                            with col3:
+                                st.write("**Motif Category:**")
+                                st.code(f"{cleavage['motif_category'] or 'Unknown'}", language="text")
+                            pathogenicity = cleavage["pathogenicity"]
+                            if pathogenicity == "Undetermined":
+                                st.warning("Undetermined")
+                                st.write("No known cleavage site motif found in the expected region.")
+                            else:
+                                st.info(f"**{pathogenicity.capitalize()}**")
+                        else:
+                            st.warning("Could not analyze cleavage site. Sequence may be incomplete.")
 
-                            cadre_1x, cadre_2x, cadre_3x = st.tabs(
-                                [
-                                    "Main Reading Frame",
-                                    "Reading Frame +1",
-                                    "Reading Frame -1",
-                                ]
+                    cadre_1x, cadre_2x, cadre_3x = st.tabs(
+                        ["Main Reading Frame", "Reading Frame +1", "Reading Frame -1"]
+                    )
+                    with cadre_1x:
+                        display_reading_frame_X(result["cleavage_main"])
+                    with cadre_2x:
+                        display_reading_frame_X(result["cleavage_plus_one"])
+                    with cadre_3x:
+                        display_reading_frame_X(result["cleavage_minus_one"])
+
+        if show_matrix and "multi_gene_sequences" in st.session_state:
+            multi_gene_sequences = st.session_state["multi_gene_sequences"]
+            n_specimens = len(list(multi_gene_sequences.values())[0])
+            if n_specimens > 1:
+                st.divider()
+                st.subheader("Input Sequences Comparison Matrix")
+                matrix_gene_tabs = st.tabs(list(multi_gene_sequences.keys()))
+                for matrix_tab, (gene, gene_seqs) in zip(
+                    matrix_gene_tabs, multi_gene_sequences.items()
+                ):
+                    with matrix_tab:
+                        headers = list(gene_seqs.keys())
+                        seqs = list(gene_seqs.values())
+                        matrix = [
+                            [
+                                SequenceSimilarity.pairwise_similarity(s1, s2)
+                                for s2 in seqs
+                            ]
+                            for s1 in seqs
+                        ]
+                        hover_text = [
+                            [
+                                f"{headers[i]}<br>{headers[j]}<br>Similarity: {matrix[i][j]:.1f}%"
+                                for j in range(len(headers))
+                            ]
+                            for i in range(len(headers))
+                        ]
+                        fig_matrix = go.Figure(
+                            data=go.Heatmap(
+                                z=matrix,
+                                x=[h[:10] for h in headers],
+                                y=[h[:10] for h in headers],
+                                colorscale="RdYlGn_r",
+                                zmid=85,
+                                text=[[f"{val:.2f}%" for val in row] for row in matrix],
+                                texttemplate="%{text}",
+                                textfont={"size": 10},
+                                colorbar=dict(title="Similarity %"),
+                                hovertext=hover_text,
+                                hovertemplate="%{hovertext}<extra></extra>",
                             )
+                        )
+                        fig_matrix.update_layout(
+                            height=700,
+                            width=850,
+                            plot_bgcolor="#060d14",
+                            paper_bgcolor="#060d14",
+                            margin=dict(t=40, l=50, r=50, b=50),
+                        )
+                        st.plotly_chart(
+                            fig_matrix, width="content", key=f"matrix_{gene}"
+                        )
 
-                            with cadre_1x:
-                                display_reading_frame_X(result["cleavage_main"])
-                            with cadre_2x:
-                                display_reading_frame_X(result["cleavage_plus_one"])
-                            with cadre_3x:
-                                display_reading_frame_X(result["cleavage_minus_one"])
+        st.divider()
+        st.subheader("Full Analysis Details")
+        export_rows = []
+        for specimen in multi_results:
+            gene_results = specimen["genes"]
+            row = {"Combined Genotype": specimen["combined_genotype"]}
+            for gene, result in gene_results.items():
+                matches = result["genotype_matches"]
+                top = unpack_top_match(matches[0]) if matches else None
+                row[f"{gene} - Header"] = result["input_header"]
+                row[f"{gene} - Best Match"] = top["genotype"] if top else "N/A"
+                row[f"{gene} - Avg Score (%)"] = top["avg_similarity"] if top else "N/A"
+                row[f"{gene} - Best Score (%)"] = top["best_score"] if top else "N/A"
+                if result.get("pathogenicity_configured"):
+                    frames = [
+                        (result["cleavage_main"], "Main"),
+                        (result["cleavage_plus_one"], "+1"),
+                        (result["cleavage_minus_one"], "-1"),
+                    ]
+                    best_cleavage = next(
+                        (c for c, _ in frames if c["pathogenicity"] != "Undetermined"),
+                        None,
+                    )
+                    row[f"{gene} - Pathogenicity"] = (
+                        best_cleavage["pathogenicity"]
+                        if best_cleavage
+                        else "Undetermined"
+                    )
+            export_rows.append(row)
+        export_df = pd.DataFrame(export_rows)
+        st.dataframe(export_df, width="stretch", hide_index=True)
+        st.session_state["report_export_df"] = export_df
 
         # ============================================================= RÉSULTATS MONO
 
