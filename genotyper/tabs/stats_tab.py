@@ -84,7 +84,12 @@ def render(path, entry_config=None):
                 gene_geno_counts[gene][geno] = gene_geno_counts[gene].get(geno, 0) + 1
                 global_geno_totals[geno] = global_geno_totals.get(geno, 0) + 1
 
-        sorted_genos = [g for g, _ in sorted(global_geno_totals.items(), key=lambda x: x[1], reverse=True)]
+        sorted_genos = [
+            g
+            for g, _ in sorted(
+                global_geno_totals.items(), key=lambda x: x[1], reverse=True
+            )
+        ]
 
         st.subheader("All Genotypes (combined)")
         fig_global = go.Figure()
@@ -92,17 +97,19 @@ def render(path, entry_config=None):
         for i, gene in enumerate(db_references.keys()):
             counts = gene_geno_counts[gene]
             y_vals = [counts.get(g, 0) for g in sorted_genos]
-            fig_global.add_trace(go.Bar(
-                name=gene,
-                x=sorted_genos,
-                y=y_vals,
-                marker=dict(
-                    color=gene_colors[i % len(gene_colors)],
-                ),
-                text=y_vals,
-                textposition="inside",
-                hovertemplate="%{x}<br>%{y} seq<br>" + gene + "<extra></extra>",
-            ))
+            fig_global.add_trace(
+                go.Bar(
+                    name=gene,
+                    x=sorted_genos,
+                    y=y_vals,
+                    marker=dict(
+                        color=gene_colors[i % len(gene_colors)],
+                    ),
+                    text=y_vals,
+                    textposition="inside",
+                    hovertemplate="%{x}<br>%{y} seq<br>" + gene + "<extra></extra>",
+                )
+            )
         fig_global.update_layout(
             barmode="stack",
             xaxis_title="Genotype",
@@ -120,7 +127,9 @@ def render(path, entry_config=None):
 
         # Sélection du gène APRÈS le graphe global
         gene_names = list(db_references.keys())
-        selected_gene = st.selectbox("Select gene for statistics", gene_names)
+        selected_gene = st.segmented_control("Gene", gene_names, default=gene_names[0])
+        if selected_gene not in gene_names:
+            selected_gene = gene_names[0]
         flat_refs = db_references[selected_gene]
         gene_path = os.path.join(path, selected_gene)
         gene_cfg = (entry_config.get("genes", {}) or {}).get(selected_gene, {})
@@ -152,8 +161,8 @@ def render(path, entry_config=None):
 
         col_m1, col_m2, col_m3 = st.columns(3)
         col_m1.metric("Total Sequences", f"{db_total_count:,}")
-        col_m2.metric("Total Base Pairs", f"{total_bp:,}")
-        col_m3.metric("Unique Genotypes", unique_genotypes)
+        col_m2.metric("Total Base Pairs", f"{total_bp:,}bp")
+        col_m3.metric("Average Sequence Lenght", f"{(total_bp / db_total_count):.1f}bp")
         st.divider()
 
         # ── Comptage des sous-génotypes pour le gène sélectionné ──
@@ -205,14 +214,15 @@ def render(path, entry_config=None):
 
         # Statistique par gène sélectionné
         years_with_data = [int(y) for y in year_counts if year_counts[y] > 0]
-        col1, col2 = st.columns(2)
-        col1.metric("Unique Sub-Genotypes", len(genotype_counts))
-        col2.metric(
+        col1, col2, col3 = st.columns(3)
+        col2.metric("Unique Sub-Genotypes", len(genotype_counts))
+        col3.metric(
             "Year Range",
             f"{min(years_with_data)}–{max(years_with_data)}"
             if years_with_data
             else "N/A",
         )
+        col1.metric("Unique Genotypes", unique_genotypes)
 
         st.divider()
 
