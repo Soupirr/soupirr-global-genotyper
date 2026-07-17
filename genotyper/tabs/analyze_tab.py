@@ -140,7 +140,7 @@ def render(path, config=None):
         similarity_method = st.radio(  # bouton radio pour selectionner la méthode d'analyse
             "Similarity Method",
             ["Pairwise", "Hamming"],
-            help="Hamming: simple mismatch count. Pairwise: accounts for insertions/deletions",
+            help="Hamming: simple mismatch count. Pairwise: accounts for insertions/deletions (Uses Needleman-Wunsch algorythm)",
         )
 
         # Alerte pour la méthode de Leveshtein

@@ -12,8 +12,30 @@ from genotyper.tabs.analyze_tab import load_all_references
 RESULT_PREFIX = "validation_results_"
 
 
+def _stratified_holdout(references, holdout_size, min_remaining_pct=0.20):
+    """Tirage aléatoire stratifié : au moins min_remaining_pct des séquences
+    de chaque génotype restent dans le pool de référence."""
+    by_genotype = {}
+    for h in references:
+        parts = h.split("|")
+        geno = parts[2] if len(parts) >= 3 else "Unknown"
+        by_genotype.setdefault(geno, []).append(h)
+
+    holdout_headers = []
+    for geno, headers in by_genotype.items():
+        max_holdout = max(
+            0, len(headers) - max(1, int(len(headers) * min_remaining_pct))
+        )
+        if max_holdout == 0:
+            continue
+        k = min(max_holdout, max(1, int(len(headers) * (1 - min_remaining_pct))))
+        holdout_headers.extend(random.sample(headers, k))
+
+    random.shuffle(holdout_headers)
+    return holdout_headers[:holdout_size]
+
+
 def run_validation(references, holdout_size, n, method):
-    all_headers = list(references.keys())
     rows = []
 
     total_steps = n * holdout_size
@@ -21,9 +43,7 @@ def run_validation(references, holdout_size, n, method):
     step = 0
 
     for run in range(n):
-        holdout_headers = random.sample(
-            all_headers, min(holdout_size, len(all_headers))
-        )
+        holdout_headers = _stratified_holdout(references, holdout_size)
         holdout_set = set(holdout_headers)
         pool = {h: s for h, s in references.items() if h not in holdout_set}
         identifier = GenotypeIdentifier(pool)
@@ -142,12 +162,25 @@ def render_results(df):
     st.divider()
 
     st.subheader("Export")
-    st.download_button(
-        "Download raw prediction CSV",
-        data=df.to_csv(index=False),
-        file_name="validation_predictions.csv",
-        mime="text/csv",
-    )
+    if st.button("Save validation report", type="primary"):
+        import sys
+
+        if getattr(sys, "frozen", False):
+            export_dir = os.path.join(
+                os.path.dirname(sys.executable), "exports", "validation"
+            )
+        else:
+            export_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "..",
+                "exports",
+                "validation",
+            )
+        os.makedirs(export_dir, exist_ok=True)
+        export_path = os.path.join(export_dir, "validation_predictions.csv")
+        df.to_csv(export_path, index=False)
+        st.success(f"Report saved to: {export_path}")
 
 
 def render(path):
@@ -184,9 +217,7 @@ def render(path):
         )
 
     with col2:
-        method_label = st.radio(
-            "Similarity Method", ["Pairwise (accurate)", "Hamming (fast)"]
-        )
+        method_label = st.radio("Similarity Method", ["Pairwise", "Hamming"])
         if "Pairwise" in method_label:
             st.caption("Pairwise is really slow ~1min per sequences.")
         if "Hamming" in method_label:

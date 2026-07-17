@@ -193,13 +193,16 @@ def draw_tree(tree, title, multi_query=False):
         width="stretch",
         config={"scrollZoom": True, "displayModeBar": True},
     )
-    st.download_button(
-        "Download tree (Newick)",
-        data=tree_to_newick(tree),
-        file_name=f"{title[:50].replace(' ', '_')}.nwk",
-        mime="text/plain",
-        key=f"newick_dl_{title}",
-    )
+    if st.button("Save tree (Newick)", key=f"newick_dl_{title}"):
+        import sys
+        base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+        export_dir = os.path.join(base, "exports", "trees")
+        os.makedirs(export_dir, exist_ok=True)
+        fname = f"{title[:50].replace(' ', '_')}.nwk"
+        export_path = os.path.join(export_dir, fname)
+        with open(export_path, "w") as f:
+            f.write(tree_to_newick(tree))
+        st.success(f"Saved to: {export_path}")
 
 
 # ============================================================================
@@ -384,9 +387,13 @@ def render(path):
                 entry_name=os.path.basename(path),
             )
         if "report_html" in st.session_state:
-            st.download_button(
-                "Download Report (HTML)",
-                data=st.session_state["report_html"],
-                file_name=f"genotyper_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html",
-                mime="text/html",
-            )
+            if st.button("Save Report (HTML)"):
+                import sys
+                base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+                export_dir = os.path.join(base, "exports", "reports")
+                os.makedirs(export_dir, exist_ok=True)
+                fname = f"genotyper_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html"
+                export_path = os.path.join(export_dir, fname)
+                with open(export_path, "w", encoding="utf-8") as f:
+                    f.write(st.session_state["report_html"])
+                st.success(f"Saved to: {export_path}")
