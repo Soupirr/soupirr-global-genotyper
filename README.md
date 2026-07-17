@@ -4,7 +4,7 @@
 
 </div>
 
-# Soupirr's Genotyper
+# Soupirr's Global Genotyper
 
 ![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.57.0-FF4B4B?logo=streamlit&logoColor=white)
@@ -17,7 +17,7 @@ A Streamlit web/local application for identifying pathogen genotypes and predict
 
 The tool is **pathogen-agnostic**: each "entry" is a self-contained reference dataset (a FASTA database plus optional pathogenicity/motif configuration) for a given pathogen and gene. Bundled entries include Newcastle Disease Virus (F gene), Avian Influenza (HA gene), and Bluetongue/Epizootic Hemorrhagic Disease Virus (VP2 gene), but adding a new pathogen only requires a correctly formatted reference FASTA and no code changes.
 
-For more information on how to use the app and how to add new entries, see [**WIKI QUICK_START**](https://github.com/Soupirr/soupirr-global-genotyper/wiki/).
+For more information on how to use the app and how to add new entries, see the [**WIKI**](https://github.com/Soupirr/soupirr-global-genotyper/wiki/).
 
 ---
 
@@ -25,7 +25,7 @@ For more information on how to use the app and how to add new entries, see [**WI
 
 Pre-built Windows executable available on the [Releases page](../../releases/latest).
 
-Download `Genotyper_Windows.zip`, unzip, and double-click `Genotyper.exe`.
+Download `v-_SGG-win.zip`, unzip, and double-click `Soupirr's Genotyper.exe`.
 
 ---
 
