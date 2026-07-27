@@ -30,8 +30,8 @@ _CSS = """
 def _fig_matrix(fig):
     fig2 = go.Figure(fig)
     fig2.update_layout(
-        yaxis=dict(automargin=True),
-        margin=dict(l=150, r=50, t=40, b=100),
+        yaxis={"automargin": True},
+        margin={"l": 150, "r": 50, "t": 40, "b": 100},
     )
     return fig2.to_html(
         full_html=False,

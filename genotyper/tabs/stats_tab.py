@@ -37,14 +37,14 @@ def render(path, entry_config=None):
         tab_labels.append("Pathogenicity Documentation")
 
         # Détection multi/mono avant l'ouverture des tabs
-    db_references, db_files_count, db_total_count, _ = analyze_tab.load_all_references(
+    db_references, _db_files_count, db_total_count, _ = analyze_tab.load_all_references(
         path
     )
     is_multi = bool(entry_config and entry_config.get("multi", False))
 
     # Métriques globales avant le graphe et la sélection de gène
     if is_multi:
-        _first_refs = db_references[list(db_references.keys())[0]]
+        _first_refs = db_references[next(iter(db_references.keys()))]
         _total_sequences = sum(len(refs) for refs in db_references.values())
         _total_bp = sum(
             len(seq)
@@ -78,7 +78,7 @@ def render(path, entry_config=None):
         gene_geno_counts = {gene: {} for gene in db_references}
         global_geno_totals = {}
         for gene, gene_refs in db_references.items():
-            for header in gene_refs.keys():
+            for header in gene_refs:
                 parts = header.split("|")
                 if len(parts) < 7:
                     continue
@@ -104,9 +104,9 @@ def render(path, entry_config=None):
                     name=gene,
                     x=sorted_genos,
                     y=y_vals,
-                    marker=dict(
-                        color=gene_colors[i % len(gene_colors)],
-                    ),
+                    marker={
+                        "color": gene_colors[i % len(gene_colors)],
+                    },
                     text=y_vals,
                     textposition="inside",
                     hovertemplate="%{x}<br>%{y} seq<br>" + gene + "<extra></extra>",
@@ -117,12 +117,12 @@ def render(path, entry_config=None):
             xaxis_title="Genotype",
             yaxis_title="Nb. of Sequences",
             height=350,
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white"),
-            xaxis=dict(type="category", tickangle=-45),
-            legend=dict(orientation="h", y=1.1, x=0),
+            font={"color": "white"},
+            xaxis={"type": "category", "tickangle": -45},
+            legend={"orientation": "h", "y": 1.1, "x": 0},
         )
         st.plotly_chart(fig_global, width="stretch")
         st.divider()
@@ -174,7 +174,7 @@ def render(path, entry_config=None):
         # Pattern du gène sélectionné pour extraire le sous-génotype
         geno_pattern = gene_cfg.get("genotype_pattern", "") if is_multi else ""
 
-        for header in flat_refs.keys():
+        for header in flat_refs:
             parts = header.split("|")
             if len(parts) < 7:
                 continue
@@ -237,11 +237,11 @@ def render(path, entry_config=None):
             go.Bar(
                 x=df_genotypes["Genotype"],
                 y=df_genotypes["Sequences"],
-                marker=dict(
-                    color=df_genotypes["Sequences"],
-                    colorscale=[[0, "#0099cc"], [1, "#00c9a7"]],
-                    showscale=False,
-                ),
+                marker={
+                    "color": df_genotypes["Sequences"],
+                    "colorscale": [[0, "#0099cc"], [1, "#00c9a7"]],
+                    "showscale": False,
+                },
                 text=df_genotypes["Sequences"],
                 textposition="outside",
             )
@@ -250,11 +250,11 @@ def render(path, entry_config=None):
             xaxis_title="Genotype",
             yaxis_title="Nb. of Sequences",
             height=420,
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white"),
-            xaxis=dict(type="category", tickangle=-45),
+            font={"color": "white"},
+            xaxis={"type": "category", "tickangle": -45},
         )
         st.plotly_chart(fig_bar, width="stretch")
 
@@ -276,7 +276,7 @@ def render(path, entry_config=None):
             go.Bar(
                 x=df_years["Year"],
                 y=df_years["Sequences"],
-                marker=dict(color="#00c9a7"),
+                marker={"color": "#00c9a7"},
                 text=df_years["Sequences"],
                 textposition="outside",
             )
@@ -285,11 +285,11 @@ def render(path, entry_config=None):
             xaxis_title="Year",
             yaxis_title="Nb. of Sequences",
             height=350,
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white"),
-            xaxis=dict(dtick=2),
+            font={"color": "white"},
+            xaxis={"dtick": 2},
         )
         st.plotly_chart(fig_year, width="stretch")
 
@@ -323,18 +323,18 @@ def render(path, entry_config=None):
                     labels=df_hosts["Host"],
                     values=df_hosts["Sequences"],
                     hole=0.4,
-                    marker=dict(colors=pie_colors),
+                    marker={"colors": pie_colors},
                     textinfo="label+percent",
                     textposition="inside",
-                    textfont=dict(color="white"),
+                    textfont={"color": "white"},
                 )
             )
             fig_host.update_layout(
                 height=380,
-                margin=dict(l=0, r=0, t=30, b=0),
+                margin={"l": 0, "r": 0, "t": 30, "b": 0},
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="white"),
+                font={"color": "white"},
                 showlegend=False,
             )
             st.plotly_chart(fig_host, width="stretch")
@@ -351,11 +351,11 @@ def render(path, entry_config=None):
                     x=df_countries["Sequences"],
                     y=df_countries["Country"],
                     orientation="h",
-                    marker=dict(
-                        color=df_countries["Sequences"],
-                        colorscale=[[0, "#00b0ea"], [1, "#00b194"]],
-                        showscale=False,
-                    ),
+                    marker={
+                        "color": df_countries["Sequences"],
+                        "colorscale": [[0, "#00b0ea"], [1, "#00b194"]],
+                        "showscale": False,
+                    },
                     text=df_countries["Sequences"],
                     textposition="outside",
                 )
@@ -363,11 +363,11 @@ def render(path, entry_config=None):
             fig_country.update_layout(
                 xaxis_title="Number of Sequences",
                 height=380,
-                margin=dict(l=0, r=30, t=30, b=0),
+                margin={"l": 0, "r": 30, "t": 30, "b": 0},
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="white"),
-                yaxis=dict(autorange="reversed"),
+                font={"color": "white"},
+                yaxis={"autorange": "reversed"},
             )
             st.plotly_chart(fig_country, width="stretch")
 
@@ -470,18 +470,18 @@ def render(path, entry_config=None):
             fig_gen_patho.update_layout(
                 barmode="stack",
                 barnorm="percent",
-                legend=dict(yanchor="bottom", y=-1, xanchor="left", x=0.01),
+                legend={"yanchor": "bottom", "y": -1, "xanchor": "left", "x": 0.01},
                 xaxis_title="Genotypes",
                 yaxis_title="% Pathogenicity",
                 height=350,
-                margin=dict(l=0, r=0, t=30, b=0),
+                margin={"l": 0, "r": 0, "t": 30, "b": 0},
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
-                hoverlabel=dict(
-                    bgcolor="#0c1a24",
-                    font_color="white",
-                    bordercolor="rgba(255,255,255,0.2)",
-                ),
+                hoverlabel={
+                    "bgcolor": "#0c1a24",
+                    "font_color": "white",
+                    "bordercolor": "rgba(255,255,255,0.2)",
+                },
             )
             st.plotly_chart(fig_gen_patho, width="stretch")
 
@@ -510,20 +510,20 @@ def render(path, entry_config=None):
                         values=vir_counts.values,
                         hole=0.45,
                         textposition="inside",
-                        marker=dict(
-                            colors=[
+                        marker={
+                            "colors": [
                                 patho_colors.get(t, "#888888") for t in vir_counts.index
                             ]
-                        ),
+                        },
                         textinfo="label+percent",
-                        textfont=dict(color="white"),
+                        textfont={"color": "white"},
                     )
                 )
                 fig_vir_pie.update_layout(
                     height=350,
-                    margin=dict(l=0, r=0, t=0, b=0),
+                    margin={"l": 0, "r": 0, "t": 0, "b": 0},
                     paper_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="white"),
+                    font={"color": "white"},
                     showlegend=False,
                 )
                 st.plotly_chart(fig_vir_pie, width="stretch")

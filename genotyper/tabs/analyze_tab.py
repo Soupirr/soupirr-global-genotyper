@@ -27,16 +27,16 @@ def _save_matrix_png(fig_matrix, filename_base):
     fig_export.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
-        margin=dict(t=50, l=100, r=60, b=100),
+        font={"color": "#111111"},
+        margin={"t": 50, "l": 100, "r": 60, "b": 100},
     )
-    fig_export.update_xaxes(tickfont=dict(color="#111111"), tickangle=-45, automargin=True)
-    fig_export.update_yaxes(tickfont=dict(color="#111111"), automargin=True)
+    fig_export.update_xaxes(tickfont={"color": "#111111"}, tickangle=-45, automargin=True)
+    fig_export.update_yaxes(tickfont={"color": "#111111"}, automargin=True)
     fig_export.update_traces(
-        colorbar=dict(
-            title=dict(text="Similarity %", font=dict(color="#111111")),
-            tickfont=dict(color="#111111"),
-        )
+        colorbar={
+            "title": {"text": "Similarity %", "font": {"color": "#111111"}},
+            "tickfont": {"color": "#111111"},
+        }
     )
     base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
     export_dir = os.path.join(base, "exports", "reports")
@@ -130,7 +130,7 @@ def _combined_genotype(gene_results, gene_configs):
 
 
 def render(path, config=None):
-    references, files_count, total_count, load_errors = load_all_references(path)
+    references, _files_count, total_count, load_errors = load_all_references(path)
     pathogenicity_config = config or {}
 
     # Détection si l'entré est mono ou multi
@@ -284,7 +284,7 @@ def render(path, config=None):
                         )
                     else:
                         # Partie de l'analyse
-                        n_specimens = list(counts.values())[0]
+                        n_specimens = next(iter(counts.values()))
                         progress_bar = st.progress(0, text="Starting Analysis ...")
                         start_time = time.time()
                         multi_results = []
@@ -459,7 +459,7 @@ def render(path, config=None):
 
         # Sélection du specimen via segmented control
         specimen_labels = [
-            list(r["genes"].values())[0]["input_header"][:20] for r in multi_results
+            next(iter(r["genes"].values()))["input_header"][:20] for r in multi_results
         ]
         selected_label = st.segmented_control(
             "", specimen_labels, default=specimen_labels[0]
@@ -624,7 +624,7 @@ def render(path, config=None):
 
         if show_matrix and "multi_gene_sequences" in st.session_state:
             multi_gene_sequences = st.session_state["multi_gene_sequences"]
-            n_specimens = len(list(multi_gene_sequences.values())[0])
+            n_specimens = len(next(iter(multi_gene_sequences.values())))
             if n_specimens > 1:
                 st.divider()
                 st.subheader("Input Sequences Comparison Matrix")
@@ -659,7 +659,7 @@ def render(path, config=None):
                                 text=[[f"{val:.2f}%" for val in row] for row in matrix],
                                 texttemplate="%{text}",
                                 textfont={"size": 10},
-                                colorbar=dict(title="Similarity %"),
+                                colorbar={"title": "Similarity %"},
                                 hovertext=hover_text,
                                 hovertemplate="%{hovertext}<extra></extra>",
                             )
@@ -669,7 +669,7 @@ def render(path, config=None):
                             width=600,
                             plot_bgcolor="#060d14",
                             paper_bgcolor="#060d14",
-                            margin=dict(t=40, l=50, r=50, b=50),
+                            margin={"t": 40, "l": 50, "r": 50, "b": 50},
                         )
                         st.plotly_chart(
                             fig_matrix, width="content", key=f"matrix_{gene}"
@@ -884,9 +884,9 @@ def render(path, config=None):
             seq_headers_full = list(all_sequences.keys())
             matrix = []
 
-            for header1, seq1 in all_sequences.items():
+            for seq1 in all_sequences.values():
                 row = []
-                for header2, seq2 in all_sequences.items():
+                for seq2 in all_sequences.values():
                     row.append(SequenceSimilarity.pairwise_similarity(seq1, seq2))
                 matrix.append(row)
 
@@ -908,7 +908,7 @@ def render(path, config=None):
                     text=[[f"{val:.2f}%" for val in row] for row in matrix],
                     texttemplate="%{text}",
                     textfont={"size": 10},
-                    colorbar=dict(title="Similarity %"),
+                    colorbar={"title": "Similarity %"},
                     hovertext=hover_text,
                     hovertemplate="%{hovertext}<extra></extra>",
                 )
@@ -918,7 +918,7 @@ def render(path, config=None):
                 width=600,
                 plot_bgcolor="#060d14",
                 paper_bgcolor="#060d14",
-                margin=dict(t=40, l=50, r=50, b=50),
+                margin={"t": 40, "l": 50, "r": 50, "b": 50},
             )
             st.plotly_chart(fig_matrix, width="content")
             if st.button("Save matrix (PNG)"):

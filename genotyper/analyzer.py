@@ -336,7 +336,7 @@ class CleavageSiteAnalyzer:
     def analyze(
         sequence: str,
         cleavage_start: int,
-        motifs_by_type: dict = None,
+        motifs_by_type: dict | None = None,
     ):
         motifs_by_type = motifs_by_type or {}
 
@@ -485,7 +485,7 @@ def analyze_sequence(
     reference_sequences: dict[str, str],
     top_matches: int = 3,
     similarity_method: str = "hamming",
-    pathogenicity_config: dict = None,  # utilisation de Hamming par default
+    pathogenicity_config: dict | None = None,  # utilisation de Hamming par default
 ) -> dict:
 
     # Parse input
@@ -495,7 +495,7 @@ def analyze_sequence(
         return {"error": "Could not parse input FASTA"}
 
     # obtenir la première séquence
-    input_header = list(parsed_input.keys())[0]
+    input_header = next(iter(parsed_input.keys()))
     input_sequence = parsed_input[input_header]
 
     # Identifier le génotype

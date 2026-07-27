@@ -146,10 +146,10 @@ def render_results(df):
     fig_runs.update_layout(
         yaxis_title="Accuracy (%)",
         height=280,
-        margin=dict(l=0, r=0, t=10, b=0),
+        margin={"l": 0, "r": 0, "t": 10, "b": 0},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white"),
+        font={"color": "white"},
     )
     st.plotly_chart(fig_runs, width="stretch")
 
@@ -210,12 +210,12 @@ def render_results(df):
         xaxis_title="Predicted",
         yaxis_title="True",
         height=max(420, len(genos) * 26),
-        margin=dict(l=0, r=0, t=0, b=0),
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white"),
-        xaxis=dict(type="category"),
-        yaxis=dict(type="category", autorange="reversed"),
+        font={"color": "white"},
+        xaxis={"type": "category"},
+        yaxis={"type": "category", "autorange": "reversed"},
     )
     st.plotly_chart(fig_cm, width="stretch")
 

@@ -99,7 +99,7 @@ def tree_to_plotly(tree):
 
 
 def draw_tree(tree, title, multi_query=False):
-    x_lines, y_lines, x_nodes, y_nodes, labels, n_leaves, max_x = tree_to_plotly(tree)
+    x_lines, y_lines, x_nodes, y_nodes, labels, n_leaves, _max_x = tree_to_plotly(tree)
 
     if multi_query:
         q_labels = list(
@@ -121,7 +121,7 @@ def draw_tree(tree, title, multi_query=False):
             x=x_lines,
             y=y_lines,
             mode="lines",
-            line=dict(color="rgba(150,150,150,0.3)", width=1.5),
+            line={"color": "rgba(150,150,150,0.3)", "width": 1.5},
             hoverinfo="none",
         )
     )
@@ -131,60 +131,60 @@ def draw_tree(tree, title, multi_query=False):
             x=x_nodes,
             y=y_nodes,
             mode="markers+text",
-            marker=dict(size=6, color=node_colors),
+            marker={"size": 6, "color": node_colors},
             text=labels,
             textposition="middle right",
-            textfont=dict(
-                size=12,
-                color=[
+            textfont={
+                "size": 12,
+                "color": [
                     q_colors.get(lab, "#2ECC71")
                     if lab.startswith("QUERY_")
                     else "white"
                     for lab in labels
                 ],
-            ),
+            },
             hoverinfo="text",
         )
     )
     # les paramètres du graph
     fig.update_layout(
-        title=dict(
-            text=f"{title[:66]}",
-            font=dict(size=24, color="white"),
-            x=0,
-            xanchor="left",
-        ),
+        title={
+            "text": f"{title[:66]}",
+            "font": {"size": 24, "color": "white"},
+            "x": 0,
+            "xanchor": "left",
+        },
         showlegend=False,
         height=max(400, n_leaves * 25),
         width=1800,
-        margin=dict(l=0, r=0, t=40, b=0),
-        xaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-            fixedrange=False,
-        ),
-        yaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-            fixedrange=False,
-        ),
+        margin={"l": 0, "r": 0, "t": 40, "b": 0},
+        xaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "fixedrange": False,
+        },
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "fixedrange": False,
+        },
         plot_bgcolor="#060d14",
         paper_bgcolor="rgba(0,0,0,0)",
         shapes=[
-            dict(
-                type="rect",
-                xref="paper",
-                yref="paper",
-                x0=0,
-                y0=0,
-                x1=1,
-                y1=1,
-                line=dict(
-                    color="rgba(255,255,255,0.3)", width=1
-                ),  # subtle white border
-            )
+            {
+                "type": "rect",
+                "xref": "paper",
+                "yref": "paper",
+                "x0": 0,
+                "y0": 0,
+                "x1": 1,
+                "y1": 1,
+                "line": {
+                    "color": "rgba(255,255,255,0.3)", "width": 1
+                },  # subtle white border
+            }
         ],
         dragmode="pan",
     )
@@ -286,7 +286,7 @@ def render(path):
     else:
         # Récupère les séquences et références selon le mode
         if is_multi:
-            gene = st.session_state.get("tree_gene", list(references.keys())[0])
+            gene = st.session_state.get("tree_gene", next(iter(references.keys())))
             active_refs = references[gene]
             multi_gene_seqs = st.session_state.get("multi_gene_sequences", {})
             all_sequences = multi_gene_seqs.get(gene, {})
@@ -356,7 +356,7 @@ def render(path):
                         else:
                             st.session_state["trees"][header] = tree
 
-            tree_tabs = st.tabs([h[:30] for h in all_sequences.keys()])
+            tree_tabs = st.tabs([h[:30] for h in all_sequences])
             for i, (header, sequence) in enumerate(all_sequences.items()):
                 with tree_tabs[i]:
                     if header not in st.session_state["trees"]:

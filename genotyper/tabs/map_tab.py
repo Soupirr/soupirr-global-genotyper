@@ -247,7 +247,7 @@ def render(path):
                             go.Bar(
                                 x=geno_counts["genotype"],
                                 y=geno_counts["count"],
-                                marker=dict(color=world_colors),
+                                marker={"color": world_colors},
                                 text=geno_counts["count"],
                                 textposition="inside",
                             )
@@ -255,9 +255,9 @@ def render(path):
                         fig_bar.update_layout(
                             xaxis_title="Genotype",
                             yaxis_title="Sequences",
-                            xaxis=dict(type="category"),
+                            xaxis={"type": "category"},
                             height=350,
-                            margin=dict(l=0, r=0, t=20, b=0),
+                            margin={"l": 0, "r": 0, "t": 20, "b": 0},
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                         )
@@ -271,17 +271,17 @@ def render(path):
                                 labels=geno_counts["genotype"],
                                 values=geno_counts["count"],
                                 hole=0.4,
-                                marker=dict(colors=world_colors),
+                                marker={"colors": world_colors},
                                 textinfo="label+percent",
                                 textposition="inside",
-                                textfont=dict(color="white"),
+                                textfont={"color": "white"},
                             )
                         )
                         fig_pie.update_layout(
                             height=350,
-                            margin=dict(l=0, r=0, t=20, b=0),
+                            margin={"l": 0, "r": 0, "t": 20, "b": 0},
                             paper_bgcolor="rgba(0,0,0,0)",
-                            font=dict(color="white"),
+                            font={"color": "white"},
                             showlegend=False,
                         )
                         st.plotly_chart(
@@ -315,9 +315,9 @@ def render(path):
                                 go.Bar(
                                     x=df_c["genotype"],
                                     y=df_c["count"],
-                                    marker=dict(
-                                        color=[geno_color[g] for g in df_c["genotype"]],
-                                    ),
+                                    marker={
+                                        "color": [geno_color[g] for g in df_c["genotype"]],
+                                    },
                                     text=df_c["count"],
                                     textposition="inside",
                                 )
@@ -325,9 +325,9 @@ def render(path):
                             fig_cont.update_layout(
                                 xaxis_title="Genotype",
                                 yaxis_title="Sequences",
-                                xaxis=dict(type="category"),
+                                xaxis={"type": "category"},
                                 height=300,
-                                margin=dict(l=0, r=0, t=10, b=0),
+                                margin={"l": 0, "r": 0, "t": 10, "b": 0},
                                 plot_bgcolor="rgba(0,0,0,0)",
                                 paper_bgcolor="rgba(0,0,0,0)",
                             )
@@ -387,15 +387,15 @@ def render(path):
                             xaxis_title="Country",
                             yaxis_title="Sequences",
                             height=400,
-                            margin=dict(l=0, r=0, t=10, b=0),
+                            margin={"l": 0, "r": 0, "t": 10, "b": 0},
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                             xaxis_tickangle=-45,
-                            hoverlabel=dict(
-                                bgcolor="#0c1a24",
-                                font_color="white",
-                                bordercolor="rgba(255,255,255,0.2)",
-                            ),
+                            hoverlabel={
+                                "bgcolor": "#0c1a24",
+                                "font_color": "white",
+                                "bordercolor": "rgba(255,255,255,0.2)",
+                            },
                         )
                         st.plotly_chart(
                             fig_country, width="stretch", key=f"country_{continent}"
