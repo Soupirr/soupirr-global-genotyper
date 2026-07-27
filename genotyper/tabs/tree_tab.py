@@ -2,20 +2,22 @@
 
 import os
 import time
-import streamlit as st
+
 import plotly.graph_objects as go
+import streamlit as st
+
+from genotyper import report
 from genotyper.analyzer import (
-    find_closest_neighbours,
-    write_temp_fasta,
     align_sequences_mafft,
     build_tree_fasttree,
     build_tree_iqtree2,
-    tree_to_newick,
-    get_color,
     clean_sequence,
+    find_closest_neighbours,
+    get_color,
+    tree_to_newick,
+    write_temp_fasta,
 )
 from genotyper.config import DATA_FOLDER, PALETTE
-from genotyper import report
 from genotyper.tabs.analyze_tab import load_all_references
 
 # ============================================================================
@@ -198,7 +200,7 @@ def draw_tree(tree, title, multi_query=False):
         base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
         export_dir = os.path.join(base, "exports", "trees")
         os.makedirs(export_dir, exist_ok=True)
-        fname = f"{title[:50].replace(' ', '_')}.nwk"
+        fname = f"{title[:50].replace(' ', '_')}_{time.strftime('%Y%m%d_%H%M%S')}.nwk"
         export_path = os.path.join(export_dir, fname)
         with open(export_path, "w") as f:
             f.write(tree_to_newick(tree))
@@ -310,8 +312,7 @@ def render(path):
                     tmp_fasta = os.path.join(tmp_dir, "combined_input.fasta")
                     tmp_align = os.path.join(tmp_dir, "combined_aligned.fasta")
                     with open(tmp_fasta, "w") as f:
-                        for qh, qs in all_sequences.items():
-                            f.write(f">QUERY_{qh}\n{clean_sequence(qs)}\n")
+                        f.writelines(f">QUERY_{qh}\n{clean_sequence(qs)}\n" for qh, qs in all_sequences.items())
                         for h, s in pool.items():
                             f.write(f">{h}\n{clean_sequence(s)}\n")
                     align_sequences_mafft(tmp_fasta, tmp_align)

@@ -2,9 +2,9 @@
 
 import html as _html
 from datetime import datetime
+
 import plotly.graph_objects as go
 from plotly.offline import get_plotlyjs
-
 
 # Dark theme matching the app (so embedded charts blend in).
 _CSS = """

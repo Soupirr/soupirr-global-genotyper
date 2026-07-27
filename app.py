@@ -1,13 +1,14 @@
 """Streamlit Web Application - GENOTYPER"""
 
-import streamlit as st
-from genotyper.tabs import tree_tab, analyze_tab, stats_tab, validation_tab
-from genotyper.config import CUSTOM_CSS, SEQ_FOLDER
-from genotyper.migration import migrate_fasta_text
-from genotyper.analyzer import load_entry_config
 import json
 import os
 
+import streamlit as st
+
+from genotyper.analyzer import load_entry_config
+from genotyper.config import CUSTOM_CSS, SEQ_FOLDER
+from genotyper.migration import migrate_fasta_text
+from genotyper.tabs import analyze_tab, stats_tab, tree_tab, validation_tab
 
 # Page configuration
 st.set_page_config(
@@ -425,5 +426,5 @@ else:
     with tab_tree:
         tree_tab.render(selected_path)
     with tab_val:
-        validation_tab.render(selected_path)
+        validation_tab.render(selected_path, entry_config)
 # ============================================================================

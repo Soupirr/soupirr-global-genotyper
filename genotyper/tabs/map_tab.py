@@ -1,10 +1,12 @@
 """Global Distribution Map tab."""
 
 import os
-import streamlit as st
+
 import pandas as pd
-import pydeck as pdk
 import plotly.graph_objects as go
+import pydeck as pdk
+import streamlit as st
+
 from genotyper.config import LOCATION_FOLDER, PALETTE
 
 _FASTA_EXTS = {".fasta", ".fas", ".fa", ".txt"}

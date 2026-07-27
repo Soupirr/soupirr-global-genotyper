@@ -1,15 +1,16 @@
 """Core analysis module"""
 
-from typing import Dict, List, Tuple
-import subprocess
-from Bio import Phylo
+import csv
 import io
+import json
 import os
 import platform
 import shutil
+import subprocess
 import zlib
-import csv
-import json
+
+from Bio import Phylo
+
 from genotyper.config import PALETTE
 
 # ============================================================================
@@ -109,7 +110,7 @@ def load_entry_config(entry_path: str) -> dict:
 # parse_text même chose mais à partir d'un texte collé. Filtre les caractères illégaux en plus.
 class FASTAParser:
     @staticmethod
-    def parse_file(filepath: str) -> Dict[str, str]:
+    def parse_file(filepath: str) -> dict[str, str]:
         sequences = {}  # Dictionnaire qui va stocker toutes les séquences : {header: séquence}
         current_header = None
         current_seq = []  # Liste qui accumule les lignes de la séquence en cours
@@ -145,7 +146,7 @@ class FASTAParser:
         return sequences
 
     @staticmethod
-    def parse_text(fasta_text: str) -> Dict[str, str]:
+    def parse_text(fasta_text: str) -> dict[str, str]:
         sequences = {}
         lines = fasta_text.strip().split("\n")
 
@@ -415,11 +416,11 @@ class CleavageSiteAnalyzer:
 # Class qui comparer une séquence inconnue contre toute la base de données
 # et retourner les génotypes les plus similaires avec leurs statistiques.
 class GenotypeIdentifier:
-    def __init__(self, references: Dict[str, str]):
+    def __init__(self, references: dict[str, str]):
         # Initialise la classe avec le dictionnaire de séquences de référence
         self.references = references
 
-    def identify(self, input_sequence: str, method="hamming", top_n=3) -> List[Tuple]:
+    def identify(self, input_sequence: str, method="hamming", top_n=3) -> list[tuple]:
         results = []
 
         # Choisit la méthode de comparaison (Hamming ou Pairwise)
@@ -481,11 +482,11 @@ class GenotypeIdentifier:
 # et retourne tous les résultats dans un seul dictionnaire.
 def analyze_sequence(
     input_fasta: str,
-    reference_sequences: Dict[str, str],
+    reference_sequences: dict[str, str],
     top_matches: int = 3,
     similarity_method: str = "hamming",
     pathogenicity_config: dict = None,  # utilisation de Hamming par default
-) -> Dict:
+) -> dict:
 
     # Parse input
     parsed_input = FASTAParser.parse_text(input_fasta)
@@ -651,8 +652,7 @@ def clean_sequence(seq):
 def write_temp_fasta(query_header, query_sequence, neighbours, output_path):
     with open(output_path, "w") as f:
         f.write(f">QUERY_{query_header}\n{clean_sequence(query_sequence)}\n")
-        for header, seq, score in neighbours:
-            f.write(f">{header}\n{clean_sequence(seq)}\n")
+        f.writelines(f">{header}\n{clean_sequence(seq)}\n" for header, seq, score in neighbours)
 
 
 # ============================================================================

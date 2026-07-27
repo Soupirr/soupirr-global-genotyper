@@ -1,9 +1,11 @@
 """NCBI Virus -> Toolbox FASTA header migration."""
 
+import os
+
 import pandas as pd
+
 from genotyper.analyzer import FASTAParser
 from genotyper.config import HOSTS_FOLDER, LOCATION_FOLDER
-import os
 
 
 def load_migration_data():

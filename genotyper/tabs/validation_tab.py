@@ -2,9 +2,13 @@
 
 import os
 import random
-import streamlit as st
+import re
+import time
+
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
 from genotyper.analyzer import GenotypeIdentifier
 from genotyper.tabs.analyze_tab import load_all_references
@@ -12,30 +16,67 @@ from genotyper.tabs.analyze_tab import load_all_references
 RESULT_PREFIX = "validation_results_"
 
 
-def _stratified_holdout(references, holdout_size, min_remaining_pct=0.20):
-    """Tirage aléatoire stratifié : au moins min_remaining_pct des séquences
-    de chaque génotype restent dans le pool de référence."""
+def _stratified_holdout(
+    references, holdout_size, min_remaining_pct=0.20, well_covered_threshold=15
+):
+    """Tirage aléatoire stratifié :
+    - Au moins 1 séquence par génotype bien couvert (>= well_covered_threshold) est garantie
+    - Au moins min_remaining_pct des séquences de chaque génotype restent dans le pool
+    """
     by_genotype = {}
     for h in references:
         parts = h.split("|")
         geno = parts[2] if len(parts) >= 3 else "Unknown"
         by_genotype.setdefault(geno, []).append(h)
 
-    holdout_headers = []
+    guaranteed = []
+    remaining_pool = {geno: list(headers) for geno, headers in by_genotype.items()}
+
+    # Étape 1 : garantir au moins 1 séquence par génotype bien couvert
     for geno, headers in by_genotype.items():
         max_holdout = max(
             0, len(headers) - max(1, int(len(headers) * min_remaining_pct))
         )
-        if max_holdout == 0:
-            continue
-        k = min(max_holdout, max(1, int(len(headers) * (1 - min_remaining_pct))))
-        holdout_headers.extend(random.sample(headers, k))
+        if len(headers) >= well_covered_threshold and max_holdout > 0:
+            chosen = random.choice(remaining_pool[geno])
+            guaranteed.append(chosen)
+            remaining_pool[geno].remove(chosen)
 
+    # Si on a déjà atteint ou dépassé holdout_size avec les garantis
+    if len(guaranteed) >= holdout_size:
+        random.shuffle(guaranteed)
+        return guaranteed[:holdout_size]
+
+    # Étape 2 : remplir le reste aléatoirement dans les slots disponibles
+    extra_slots = holdout_size - len(guaranteed)
+    candidates = []
+    for geno, headers in remaining_pool.items():
+        already_taken = len(by_genotype[geno]) - len(headers)
+        max_holdout = (
+            max(
+                0,
+                len(by_genotype[geno])
+                - max(1, int(len(by_genotype[geno]) * min_remaining_pct)),
+            )
+            - already_taken
+        )
+        if max_holdout > 0:
+            candidates.extend(random.sample(headers, min(max_holdout, len(headers))))
+
+    random.shuffle(candidates)
+    holdout_headers = guaranteed + candidates[:extra_slots]
     random.shuffle(holdout_headers)
-    return holdout_headers[:holdout_size]
+    return holdout_headers
 
 
-def run_validation(references, holdout_size, n, method):
+def _apply_pattern(genotype, pattern):
+    if not pattern:
+        return genotype
+    m = re.search(pattern, genotype)
+    return m.group(0) if m else genotype
+
+
+def run_validation(references, holdout_size, n, method, genotype_pattern=""):
     rows = []
 
     total_steps = n * holdout_size
@@ -53,12 +94,13 @@ def run_validation(references, holdout_size, n, method):
             progress.progress(
                 step / total_steps, text=f"Run {run + 1}/{n} - {step}/{total_steps}"
             )
-            true_genotype = header.split("|")[2]
+            true_genotype = _apply_pattern(header.split("|")[2], genotype_pattern)
             sequence = references[header]
             matches = identifier.identify(sequence, method=method, top_n=1)
             if not matches:
                 continue
-            predicted_genotype, avg_score = matches[0][0], matches[0][1]
+            predicted_genotype = _apply_pattern(matches[0][0], genotype_pattern)
+            avg_score = matches[0][1]
             rows.append(
                 {
                     "Run": run + 1,
@@ -119,15 +161,49 @@ def render_results(df):
     for _, row in df.iterrows():
         graph_cm.loc[row["True Genotype"], row["Predicted Genotype"]] += 1
 
-    fig_cm = go.Figure(
-        data=go.Heatmap(
-            z=graph_cm.values,
-            x=graph_cm.columns,
-            y=graph_cm.index,
-            colorscale="Blues",
-            text=graph_cm.values,
+    z_values = graph_cm.values.astype(float)
+    n = len(genos)
+    diag_mask = np.eye(n, dtype=bool)
+
+    z_diag = np.where(diag_mask, z_values, np.nan)
+    z_off = np.where(~diag_mask, z_values, np.nan)
+    text_diag = np.where(diag_mask, graph_cm.values, "").tolist()
+    text_off = np.where(~diag_mask, graph_cm.values, "").tolist()
+
+    max_off = float(np.nanmax(z_off)) if not np.all(np.isnan(z_off)) else 1.0
+    max_diag = float(np.nanmax(z_diag)) if not np.all(np.isnan(z_diag)) else 1.0
+
+    fig_cm = go.Figure()
+    fig_cm.add_trace(
+        go.Heatmap(
+            z=z_off,
+            x=genos,
+            y=genos,
+            colorscale=[[0, "#ffffff"], [1, "#c0392b"]],
+            showscale=False,
+            text=text_off,
             texttemplate="%{text}",
-            textfont={"size": 11},
+            textfont={"size": 11, "color": "#111111"},
+            zmin=0,
+            zmax=max_off,
+            customdata=graph_cm.values,
+            hovertemplate="True: %{y}<br>Predicted: %{x}<br>Occurrences: %{customdata}<extra></extra>",
+        )
+    )
+    fig_cm.add_trace(
+        go.Heatmap(
+            z=z_diag,
+            x=genos,
+            y=genos,
+            colorscale=[[0, "#b2ede5"], [1, "#00c9a7"]],
+            showscale=False,
+            text=text_diag,
+            texttemplate="%{text}",
+            textfont={"size": 11, "color": "#111111"},
+            zmin=0,
+            zmax=max_diag,
+            customdata=graph_cm.values,
+            hovertemplate="True: %{y}<br>Predicted: %{x}<br>Occurrences: %{customdata}<extra></extra>",
         )
     )
     fig_cm.update_layout(
@@ -178,12 +254,61 @@ def render_results(df):
                 "validation",
             )
         os.makedirs(export_dir, exist_ok=True)
-        export_path = os.path.join(export_dir, "validation_predictions.csv")
-        df.to_csv(export_path, index=False)
-        st.success(f"Report saved to: {export_path}")
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+        # Fichier 1 : prédictions brutes
+        df.to_csv(
+            os.path.join(export_dir, f"validation_predictions_{timestamp}.csv"),
+            index=False,
+        )
+
+        # Fichier 2 : résumé global
+        run_acc = df.groupby("Run")["Match"].mean() * 100
+        mean_acc = run_acc.mean()
+        std_acc = run_acc.std() if len(run_acc) > 1 else 0
+
+        df_summary = pd.DataFrame(
+            {
+                "Metric": [
+                    "Mean Accuracy (%)",
+                    "Standard Deviation",
+                    "Number of Runs",
+                    "Total Predictions",
+                ],
+                "Value": [f"{mean_acc:.2f}", f"{std_acc:.2f}", len(run_acc), len(df)],
+            }
+        )
+        df_per_run = run_acc.reset_index()
+        df_per_run.columns = ["Run", "Accuracy (%)"]
+        df_per_run["Accuracy (%)"] = df_per_run["Accuracy (%)"].map("{:.2f}".format)
+
+        df_miss = df[~df["Match"]]
+        top_confusion = (
+            (
+                df_miss.groupby(["True Genotype", "Predicted Genotype"])
+                .size()
+                .reset_index(name="Count")
+                .sort_values("Count", ascending=False)
+                .head(20)
+            )
+            if not df_miss.empty
+            else pd.DataFrame(columns=["True Genotype", "Predicted Genotype", "Count"])
+        )
+
+        summary_path = os.path.join(export_dir, f"validation_summary_{timestamp}.csv")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write("=== GLOBAL METRICS ===\n")
+            df_summary.to_csv(f, index=False)
+            f.write("\n=== ACCURACY PER RUN ===\n")
+            df_per_run.to_csv(f, index=False)
+            f.write("\n=== TOP CONFUSIONS ===\n")
+            top_confusion.to_csv(f, index=False)
+
+        st.success(f"Saved to: {export_dir}")
 
 
-def render(path):
+def render(path, entry_config=None):
     st.header("Precision Validation")
     st.markdown(
         "Randomly holds out sequences from this entry's own reference dataset "
@@ -191,29 +316,51 @@ def render(path):
         "a mean accuracy instead of a single lucky/unlucky draw."
     )
 
-    references, _, total_count, _ = load_all_references(path)
-    result_key = f"{RESULT_PREFIX}{os.path.basename(path)}"
+    db_references, _, total_count, _ = load_all_references(path)
+    is_multi = bool(
+        db_references and isinstance(next(iter(db_references.values())), dict)
+    )
 
-    if total_count < 10:
+    if is_multi:
+        gene_names = list(db_references.keys())
+        selected_gene = st.segmented_control("Gene", gene_names, default=gene_names[0])
+        if selected_gene not in gene_names:
+            selected_gene = gene_names[0]
+        references = db_references[selected_gene]
+        gene_total = len(references)
+        result_key = f"{RESULT_PREFIX}{os.path.basename(path)}_{selected_gene}"
+        gene_cfg = (
+            (entry_config.get("genes", {}) or {}).get(selected_gene, {})
+            if entry_config
+            else {}
+        )
+        genotype_pattern = gene_cfg.get("genotype_pattern", "")
+    else:
+        references = db_references
+        gene_total = total_count
+        result_key = f"{RESULT_PREFIX}{os.path.basename(path)}"
+        genotype_pattern = ""
+
+    if gene_total < 10:
         st.warning(
-            f"Only {total_count} reference sequences in this entry, too few for a meaningful holdout test."
+            f"Only {gene_total} reference sequences in this entry, too few for a meaningful holdout test."
         )
         return
 
-    st.info(f"Reference dataset : **{total_count}** sequences")
+    st.info(f"Reference dataset : **{gene_total}** sequences")
 
     col1, col2 = st.columns(2)
     with col1:
-        default_holdout = max(1, min(100, total_count // 3))
+        default_holdout = max(1, min(100, gene_total // 3))
         holdout_size = st.slider(
             "Sequences held out per run",
             min_value=1,
-            max_value=max(1, total_count - 5),
+            max_value=max(1, gene_total // 2),
             value=default_holdout,
             help="Removed from the matching pool each run, then tested against what's left.",
         )
         n = st.number_input(
-            "Number of runs", min_value=1, max_value=50, value=5, step=1
+            "Number of runs", min_value=1, max_value=100, value=5, step=1
         )
 
     with col2:
@@ -232,7 +379,7 @@ def render(path):
 
     if run:
         method = "hamming" if "Hamming" in method_label else "pairwise"
-        df = run_validation(references, holdout_size, int(n), method)
+        df = run_validation(references, holdout_size, int(n), method, genotype_pattern)
         st.session_state[result_key] = df
     if result_key in st.session_state:
         st.divider()

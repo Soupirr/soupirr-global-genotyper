@@ -2,12 +2,14 @@
 
 import os
 import re
-import streamlit as st
+
 import pandas as pd
 import plotly.graph_objects as go
-from genotyper.tabs import map_tab, analyze_tab
+import streamlit as st
+
 from genotyper.analyzer import CleavageSiteAnalyzer
 from genotyper.config import PALETTE, PATHO_PALETTE
+from genotyper.tabs import analyze_tab, map_tab
 
 # ============================================================================
 
@@ -143,9 +145,8 @@ def render(path, entry_config=None):
     stat_tab, map_subtab = tabs[0], tabs[1]
 
     if has_patho_md:
-        with tabs[2]:
-            with open(patho_md_path, "r", encoding="utf-8") as p:
-                st.markdown(p.read())
+        with tabs[2], open(patho_md_path, "r", encoding="utf-8") as p:
+            st.markdown(p.read())
 
     with map_subtab:
         map_tab.render(gene_path)  # ← gene_path disponible maintenant

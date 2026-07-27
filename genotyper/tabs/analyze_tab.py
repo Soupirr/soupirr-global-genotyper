@@ -1,23 +1,49 @@
 """Analyze Sequences tab."""
 
 import os
+import platform
 import re
 import time
-import platform
-import streamlit as st
+
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
+
 from genotyper.analyzer import (
+    CleavageSiteAnalyzer,
     FASTAParser,
+    SequenceSimilarity,
     analyze_sequence,
     unpack_top_match,
-    SequenceSimilarity,
-    CleavageSiteAnalyzer,
 )
-
 
 if platform.system() == "Windows":
     import winsound
+
+
+def _save_matrix_png(fig_matrix, filename_base):
+    import sys
+    fig_export = go.Figure(fig_matrix)
+    fig_export.update_layout(
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(color="#111111"),
+        margin=dict(t=50, l=100, r=60, b=100),
+    )
+    fig_export.update_xaxes(tickfont=dict(color="#111111"), tickangle=-45, automargin=True)
+    fig_export.update_yaxes(tickfont=dict(color="#111111"), automargin=True)
+    fig_export.update_traces(
+        colorbar=dict(
+            title=dict(text="Similarity %", font=dict(color="#111111")),
+            tickfont=dict(color="#111111"),
+        )
+    )
+    base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    export_dir = os.path.join(base, "exports", "reports")
+    os.makedirs(export_dir, exist_ok=True)
+    path = os.path.join(export_dir, f"{filename_base}_{time.strftime('%Y%m%d_%H%M%S')}.png")
+    fig_export.write_image(path, width=800, height=700)
+    return path
 
 # ============================================================================
 
@@ -639,8 +665,8 @@ def render(path, config=None):
                             )
                         )
                         fig_matrix.update_layout(
-                            height=700,
-                            width=850,
+                            height=500,
+                            width=600,
                             plot_bgcolor="#060d14",
                             paper_bgcolor="#060d14",
                             margin=dict(t=40, l=50, r=50, b=50),
@@ -648,6 +674,9 @@ def render(path, config=None):
                         st.plotly_chart(
                             fig_matrix, width="content", key=f"matrix_{gene}"
                         )
+                        if st.button("Save matrix (PNG)", key=f"save_matrix_{gene}"):
+                            path = _save_matrix_png(fig_matrix, f"matrix_{gene}")
+                            st.success(f"Saved to: {path}")
 
         st.divider()
         st.subheader("Full Analysis Details")
@@ -885,13 +914,16 @@ def render(path, config=None):
                 )
             )
             fig_matrix.update_layout(
-                height=700,
-                width=850,
+                height=500,
+                width=600,
                 plot_bgcolor="#060d14",
                 paper_bgcolor="#060d14",
                 margin=dict(t=40, l=50, r=50, b=50),
             )
             st.plotly_chart(fig_matrix, width="content")
+            if st.button("Save matrix (PNG)"):
+                path = _save_matrix_png(fig_matrix, "matrix")
+                st.success(f"Saved to: {path}")
             st.session_state["report_matrix_fig"] = fig_matrix
 
         st.divider()
