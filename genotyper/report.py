@@ -1,7 +1,7 @@
 """Make downloadable Report"""
 
 import html as _html
-from datetime import datetime
+from datetime import datetime, timezone
 
 import plotly.graph_objects as go
 from plotly.offline import get_plotlyjs
@@ -78,7 +78,7 @@ def build_report_html(
     # --- header ---
     p.append("<h1>Soupirr's Genotyper Analysis Report</h1>")
     p.append(
-        f"<p class='meta'>Generated {datetime.now():%Y-%m-%d %H:%M} &middot; "
+        f"<p class='meta'>Generated {datetime.now(tz=timezone.utc).astimezone():%Y-%m-%d %H:%M} &middot; "
         f"Method: {_html.escape(str(method)).title()} &middot; "
         f"{len(all_results)} sequence(s) &middot; {elapsed_time:.2f}s</p>"
     )

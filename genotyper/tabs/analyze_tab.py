@@ -76,7 +76,7 @@ def load_all_references(path):
                     seqs = FASTAParser.parse_file(os.path.join(gene_path, filename))
                     if seqs:
                         combined.update(seqs)
-                except Exception as e:
+                except (OSError, ValueError, UnicodeDecodeError) as e:
                     errors.append(
                         f"{gene}/{filename}: {e}"
                     )  # si un fichier ne passe pas il est retourné
@@ -100,7 +100,7 @@ def load_all_references(path):
                 seqs = FASTAParser.parse_file(os.path.join(path, filename))
                 if seqs:
                     combined_sequences.update(seqs)
-            except Exception as e:
+            except (OSError, ValueError, UnicodeDecodeError) as e:
                 errors.append(f"{filename}: {e}")
         return combined_sequences, len(fas_files), len(combined_sequences), errors
 

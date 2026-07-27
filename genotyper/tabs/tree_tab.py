@@ -387,14 +387,13 @@ def render(path):
                 tree_figs=tree_figs,
                 entry_name=os.path.basename(path),
             )
-        if "report_html" in st.session_state:
-            if st.button("Save Report (HTML)"):
-                import sys
-                base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-                export_dir = os.path.join(base, "exports", "reports")
-                os.makedirs(export_dir, exist_ok=True)
-                fname = f"genotyper_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html"
-                export_path = os.path.join(export_dir, fname)
-                with open(export_path, "w", encoding="utf-8") as f:
-                    f.write(st.session_state["report_html"])
-                st.success(f"Saved to: {export_path}")
+        if "report_html" in st.session_state and st.button("Save Report (HTML)"):
+            import sys
+            base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+            export_dir = os.path.join(base, "exports", "reports")
+            os.makedirs(export_dir, exist_ok=True)
+            fname = f"genotyper_report_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.html"
+            export_path = os.path.join(export_dir, fname)
+            with open(export_path, "w", encoding="utf-8") as f:
+                f.write(st.session_state["report_html"])
+            st.success(f"Saved to: {export_path}")

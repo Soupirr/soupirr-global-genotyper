@@ -8,6 +8,7 @@ import platform
 import shutil
 import subprocess
 import zlib
+from typing import ClassVar
 
 from Bio import Phylo
 
@@ -139,7 +140,7 @@ class FASTAParser:
                 if current_header:
                     sequences[current_header] = "".join(current_seq)
 
-        except Exception as e:
+        except (OSError, ValueError, UnicodeDecodeError) as e:
             print(f"Error parsing FASTA file: {e}")
             return {}
 
@@ -234,7 +235,7 @@ class CleavageSiteAnalyzer:
     CLEAVAGE_LENGTH = 24  # 8 codons = 24 nucleotides
     WINDOW = 30  # pour prendre en compte les mutations d'addition
 
-    CODON_TABLE = {
+    CODON_TABLE: ClassVar[dict[str, str]] = {
         "ATA": "I",
         "ATC": "I",
         "ATT": "I",
@@ -566,6 +567,7 @@ def build_tree_fasttree(aln_file):
         [get_fasttree_cmd(), "-nt", "-gtr", aln_file],
         capture_output=True,
         text=True,
+        check=False,
         **win_flags,
     )
     newick_str = result.stdout
@@ -595,10 +597,11 @@ def build_tree_iqtree2(aln_file):
             "1000",
             "-nt",
             "AUTO",
-            "-redo",  # nécessaire parce que le pipeline "Per-query" réutilise le même chemin de fichier temporaire (tmp_aligned.fasta) à chaque itération de la boucle - sans -redo, IQ-TREE2 refuse de tourner une 2e fois sur un fichier de sortie déjà existant
+            "-redo",
         ],
         capture_output=True,
         text=True,
+        check=False,
         **win_flags,
     )
     treefile = aln_file + ".treefile"
@@ -625,6 +628,7 @@ def align_sequences_mafft(input_fasta_path, output_fasta_path):
             [get_mafft_cmd(), "--localpair", input_fasta_path],
             stdout=out,
             stderr=subprocess.PIPE,
+            check=False,
             **win_flags,
         )
 
