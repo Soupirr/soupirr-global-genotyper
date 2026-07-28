@@ -1,0 +1,47 @@
+[theme]
+base = "light"
+
+# Core - clean lab, natural daylight
+primaryColor = "#00a688"
+backgroundColor = "#f4f8fb"
+secondaryBackgroundColor = "#e8f0f5"
+textColor = "#1a2e3d"
+
+# Typography - smooth, rounded, effortless cool
+font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500&display=swap"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300&display=swap"
+baseFontSize = 15
+baseFontWeight = 300
+headingFontSizes = ["3rem", "2.4rem", "1.8rem", "1.5rem", "1.2rem", "1rem"]
+headingFontWeights = [600, 200, 300, 300, 300, 300]
+
+# Code - aquatic terminal (light)
+codeFont = "'Inconsolata':https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&display=swap"
+codeFontSize = "0.9rem"
+codeTextColor = "#007a66"
+codeBackgroundColor = "#ddeef5"
+codeFontWeight = 300
+
+# Shapes - soft, fluid, like water
+baseRadius = "large"
+buttonRadius = "full"
+borderColor = "#c8dce8"
+dataframeBorderColor = "#c8dce8"
+dataframeHeaderBackgroundColor = "#e8f0f5"
+showWidgetBorder = false
+showSidebarBorder = true
+
+# Palette - same spectrum, lighter
+redColor = "#e05580"
+orangeColor = "#d48c20"
+yellowColor = "#4a90b8"
+greenColor = "#00a688"
+blueColor = "#0077aa"
+violetColor = "#4466aa"
+
+# Links
+linkColor = "#00a688"
+linkUnderline = false
+
+# Charts
+chartCategoricalColors = ["#00a688", "#0077aa", "#4466aa", "#00c4aa", "#005588", "#228899", "#3366aa", "#00ddaa", "#114488", "#44bbaa"]

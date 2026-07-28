@@ -6,7 +6,7 @@ import os
 import streamlit as st
 
 from genotyper.analyzer import load_entry_config
-from genotyper.config import CUSTOM_CSS, SEQ_FOLDER
+from genotyper.config import get_custom_css, SEQ_FOLDER
 from genotyper.migration import migrate_fasta_text
 from genotyper.tabs import analyze_tab, stats_tab, tree_tab, validation_tab
 
@@ -17,7 +17,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+def _read_current_theme():
+    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".streamlit", "config.toml")
+    try:
+        with open(cfg) as f:
+            return "Light" if 'base = "light"' in f.read() else "Dark"
+    except OSError:
+        return "Dark"
+
+st.markdown(get_custom_css(_read_current_theme()), unsafe_allow_html=True)
 
 
 # def des onglets
@@ -39,8 +47,17 @@ st.html("""
 
         /* Top bar transparente pour se fondre avec le fond de l'app */
         [data-testid="stHeader"] {
+            position: relative;
             background-color: rgba(14, 17, 23, 0.3);
             backdrop-filter: blur(4px);
+        }
+
+        /* Réduit l'espace sous la top bar */
+        [data-testid="stMain"] > div,
+        [data-testid="block-container"],
+        .block-container,
+        .stMainBlockContainer {
+            padding-top: 0.5rem !important;
         }
     </style>
 """)
@@ -386,6 +403,21 @@ with st.sidebar:
             del st.session_state["mig_reports"]
     st.divider()
 
+    # ── Theme switcher ────────────────────────────────────────────────────────
+    current_theme = _read_current_theme()
+    theme_choice = st.segmented_control("Theme", ["Dark", "Light"], default=current_theme)
+
+    if theme_choice and theme_choice != current_theme:
+        import shutil
+        import sys
+        base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+        src = os.path.join(base, "misc", f"config_{'dark' if theme_choice == 'Dark' else 'light'}.toml")
+        dst = os.path.join(base, ".streamlit", "config.toml")
+        shutil.copy(src, dst)
+        st.info("Restart the app to apply the theme.")
+
+    st.divider()
+
     st.markdown(
         "##### **If you encounter any issues feel free to report them [here](https://github.com/Soupirr/NDV-genotyper/issues).**"
     )
@@ -395,6 +427,42 @@ with st.sidebar:
         "https://github.com/Soupirr/soupirr-global-genotyper/wiki/Getting-Started-%E2%80%90-Adding-a-New-Entry",
     )
     reset_button = st.button("Reset Cache", on_click=reset_app)
+
+    # Injection du titre dans la top bar (dans la sidebar pour ne pas polluer le layout principal)
+    if selection:
+        _escaped = selection.replace("'", "\\'")
+        _script = f"""
+            (function() {{
+                var header = window.parent.document.querySelector('[data-testid="stHeader"]');
+                if (!header) return;
+                var el = header.querySelector('.entry-title-badge');
+                if (!el) {{
+                    el = window.parent.document.createElement('span');
+                    el.className = 'entry-title-badge';
+                    el.style.cssText = [
+                        'position:absolute', 'left:50%', 'top:50%',
+                        'transform:translate(-50%,-50%)',
+                        'font-weight:600', 'letter-spacing:3px',
+                        'font-size:1.9rem', 'white-space:nowrap',
+                        'pointer-events:none',
+                        'background:linear-gradient(90deg,#00c9a7,#0099cc,#6699cc)',
+                        '-webkit-background-clip:text',
+                        '-webkit-text-fill-color:transparent',
+                    ].join(';');
+                    header.appendChild(el);
+                }}
+                el.textContent = '{_escaped}';
+                el.style.display = 'block';
+            }})();
+        """
+    else:
+        _script = """
+            (function() {
+                var el = window.parent.document.querySelector('.entry-title-badge');
+                if (el) el.style.display = 'none';
+            })();
+        """
+    st.components.v1.html(f"<script>{_script}</script>", height=0)
 
 # ============================================================================
 # TITRE
@@ -414,7 +482,6 @@ if not selection:
     )
 
 else:
-    st.title(f"{selection}")
     tabs = st.tabs(tab_labels)
     tab_analyze, tab_tree, tab_help, tab_val = tabs[0], tabs[1], tabs[2], tabs[3]
     selected_path = os.path.join(SEQ_FOLDER, selection)

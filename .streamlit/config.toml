@@ -13,7 +13,7 @@ headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+J
 baseFontSize = 15
 baseFontWeight = 300
 headingFontSizes = ["3rem", "2.4rem", "1.8rem", "1.5rem", "1.2rem", "1rem"]
-headingFontWeights = [200, 200, 300, 300, 300, 300]
+headingFontWeights = [600, 200, 300, 300, 300, 300]
 
 # Code - aquatic terminal
 codeFont = "'Inconsolata':https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&display=swap"

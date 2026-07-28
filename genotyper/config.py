@@ -45,9 +45,34 @@ PATHO_PALETTE = [
 ]
 
 # Look de l'appli
-CUSTOM_CSS = """
-    <style>
-    h1, h2, h3 {
+_CSS_COMMON = """
+    [data-testid="stAppDeployButton"] { display: none !important; }
+    [data-testid="stSelectboxVirtualDropdownEmpty"] { display: none !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
+
+
+    /* Plotly toolbar transparent */
+    .js-plotly-plot .plotly .modebar-container,
+    .js-plotly-plot .plotly .modebar-group,
+    .js-plotly-plot .plotly .modebar,
+    .js-plotly-plot .plotly .modebar-btn {
+        background: rgba(0,0,0,0) !important;
+    }
+    .stProgress > div > div > div > div {
+        background-color: #00aebc;
+    }
+"""
+
+_CSS_DARK = """
+    h1 {
+        letter-spacing: 3px;
+        font-weight: 600 !important;
+        background: linear-gradient(90deg, #00c9a7, #0099cc, #6699cc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 20px rgba(0, 201, 167, 0.2));
+    }
+    h2, h3 {
         letter-spacing: 3px;
         font-weight: 200;
         background: linear-gradient(90deg, #00c9a7, #0099cc, #6699cc);
@@ -55,23 +80,8 @@ CUSTOM_CSS = """
         -webkit-text-fill-color: transparent;
         filter: drop-shadow(0 0 20px rgba(0, 201, 167, 0.2));
     }
-    [data-testid="stAppDeployButton"] { display: none !important; }
     section[data-testid="stMain"] {
         background: radial-gradient(ellipse at top, #0c1a24 0%, #060d14 70%);
-    }
-
-    /* Plotly toolbar transparent */
-    .js-plotly-plot .plotly .modebar-container {
-        background: rgba(0,0,0,0) !important;
-    }
-    .js-plotly-plot .plotly .modebar-group {
-        background: rgba(0,0,0,0) !important;
-    }
-    .js-plotly-plot .plotly .modebar {
-        background: rgba(0,0,0,0) !important;
-    }
-    .js-plotly-plot .plotly .modebar-btn {
-        background: rgba(0,0,0,0) !important;
     }
     .js-plotly-plot .plotly .modebar-btn path {
         fill: rgba(0, 201, 167, 0.4) !important;
@@ -79,11 +89,41 @@ CUSTOM_CSS = """
     .js-plotly-plot .plotly .modebar-btn:hover path {
         fill: rgba(0, 201, 167, 0.9) !important;
     }
-    .stProgress > div > div > div > div {
-        background-color: #00aebc;  /* red */
-    }
-    [data-testid="stSelectboxVirtualDropdownEmpty"] {
-        display: none !important;
-    }
-    [data-testid="stStatusWidget"] { display: none !important; }
 """
+
+_CSS_LIGHT = """
+    h1 {
+        letter-spacing: 3px;
+        font-weight: 600 !important;
+        background: linear-gradient(90deg, #007a66, #0066aa, #3355aa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 10px rgba(0, 122, 102, 0.15));
+    }
+    h2, h3 {
+        letter-spacing: 3px;
+        font-weight: 200;
+        background: linear-gradient(90deg, #007a66, #0066aa, #3355aa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 10px rgba(0, 122, 102, 0.15));
+    }
+    .js-plotly-plot .plotly .modebar-btn path {
+        fill: rgba(0, 122, 102, 0.5) !important;
+    }
+    .js-plotly-plot .plotly .modebar-btn:hover path {
+        fill: rgba(0, 122, 102, 1.0) !important;
+    }
+    /* Plotly text (axes, legends, titles) en sombre sur fond clair */
+    .js-plotly-plot .plotly text {
+        fill: #1a2e3d !important;
+    }
+"""
+
+
+def get_custom_css(theme: str = "Dark") -> str:
+    theme_css = _CSS_LIGHT if theme == "Light" else _CSS_DARK
+    return f"<style>{_CSS_COMMON}{theme_css}</style>"
+
+
+CUSTOM_CSS = get_custom_css("Dark")
