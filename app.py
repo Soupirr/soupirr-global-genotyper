@@ -410,7 +410,7 @@ with st.sidebar:
     if theme_choice and theme_choice != current_theme:
         import shutil
         import sys
-        base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+        base = sys._MEIPASS if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
         src = os.path.join(base, "misc", f"config_{'dark' if theme_choice == 'Dark' else 'light'}.toml")
         dst = os.path.join(base, ".streamlit", "config.toml")
         shutil.copy(src, dst)
